@@ -4,6 +4,7 @@ import { useAuth } from './hooks/useAuth';
 import { useShipments } from './hooks/useShipments';
 import { useTasks } from './hooks/useTasks';
 import { useNotes } from './hooks/useNotes';
+import { useCalendarEvents } from './hooks/useCalendarEvents';
 import { Shipment, Task, Priority, KanbanColumnID, CalendarEvent, Email, Note } from './types';
 import { USERS } from './constants';
 import AuthPage from './components/AuthPage';
@@ -11,6 +12,7 @@ import CollapsibleChat from './components/CollapsibleChat';
 import { ChatMessagesProvider } from './contexts/ChatMessagesContext';
 import { KanbanView } from './components/KanbanView';
 import TodoListView from './components/TodoList';
+import CalendarView from './components/CalendarView';
 
 declare const google: any;
 
@@ -352,15 +354,6 @@ const NotesView = ({ notes, onNoteClick }: { notes: Note[], onNoteClick: (note: 
 };
 
 // Simple placeholder views
-const CalendarView = () => (
-  <div className="p-6">
-    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
-      <h3 className="text-xl font-bold mb-4">Calendario</h3>
-      <p className="text-gray-500">Vista calendario in sviluppo...</p>
-    </div>
-  </div>
-);
-
 const GmailView = () => (
   <div className="p-6">
     <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
@@ -376,6 +369,7 @@ export default function App() {
   const { shipments, loading: shipmentsLoading, updateShipmentStatus, createShipment, createCustomer, createProduct } = useShipments();
   const { tasks, loading: tasksLoading } = useTasks();
   const { notes, loading: notesLoading } = useNotes();
+  const { events } = useCalendarEvents();
   
   const [activeView, setActiveView] = useState('dashboard');
   const [theme, setTheme] = useState(localStorage.getItem('theme') || 'light');
@@ -390,8 +384,8 @@ export default function App() {
     localStorage.setItem('theme', theme);
   }, [theme]);
 
-  // Mock events for now
-  const events = useMemo<CalendarEvent[]>(() => [], []);
+  // Mock events for now - ora utilizzando eventi reali
+  // const events = useMemo<CalendarEvent[]>(() => [], []);
 
   // Compute loading/auth gate without early-returning before hooks
   const isLoading = useMemo(() => (
@@ -456,7 +450,7 @@ export default function App() {
       case 'todo':
         return <TodoListView onTaskClick={setSelectedTask} />;
       case 'calendar':
-        return <CalendarView />;
+        return <CalendarView onEventClick={setSelectedEvent} />;
       case 'gmail':
         return <GmailView />;
       case 'notes':
