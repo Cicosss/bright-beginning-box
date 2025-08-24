@@ -175,7 +175,7 @@ const TodoList: React.FC<TodoListProps> = ({ onTaskClick }) => {
               placeholder="Inserisci il titolo del task..."
               value={newTask.title}
               onChange={(e) => setNewTask(prev => ({ ...prev, title: e.target.value }))}
-              className="w-full px-3 py-2 border border-border rounded-md bg-background"
+              className="w-full px-3 py-2 border border-border rounded-md bg-white text-black placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
               autoFocus
             />
             
@@ -183,7 +183,7 @@ const TodoList: React.FC<TodoListProps> = ({ onTaskClick }) => {
               <select
                 value={newTask.category}
                 onChange={(e) => setNewTask(prev => ({ ...prev, category: e.target.value }))}
-                className="px-3 py-2 border border-border rounded-md bg-background"
+                className="px-3 py-2 border border-border rounded-md bg-white text-black focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
               >
                 <option value="Generale">Generale</option>
                 <option value="Spedizioni">Spedizioni</option>
@@ -194,7 +194,7 @@ const TodoList: React.FC<TodoListProps> = ({ onTaskClick }) => {
               <select
                 value={newTask.priority}
                 onChange={(e) => setNewTask(prev => ({ ...prev, priority: e.target.value as Priority }))}
-                className="px-3 py-2 border border-border rounded-md bg-background"
+                className="px-3 py-2 border border-border rounded-md bg-white text-black focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
               >
                 <option value={Priority.Low}>Bassa</option>
                 <option value={Priority.Medium}>Media</option>
@@ -205,7 +205,7 @@ const TodoList: React.FC<TodoListProps> = ({ onTaskClick }) => {
                 type="date"
                 value={newTask.dueDate}
                 onChange={(e) => setNewTask(prev => ({ ...prev, dueDate: e.target.value }))}
-                className="px-3 py-2 border border-border rounded-md bg-background"
+                className="px-3 py-2 border border-border rounded-md bg-white text-black focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
               />
             </div>
             
@@ -291,7 +291,7 @@ const TodoList: React.FC<TodoListProps> = ({ onTaskClick }) => {
                                   type="text"
                                   value={editTitle}
                                   onChange={(e) => setEditTitle(e.target.value)}
-                                  className="flex-1 px-2 py-1 border border-border rounded bg-background"
+                                  className="flex-1 px-2 py-1 border border-border rounded bg-white text-black focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                                   onKeyDown={(e) => {
                                     if (e.key === 'Enter') handleEditTask(task.id, editTitle);
                                     if (e.key === 'Escape') cancelEditing();
