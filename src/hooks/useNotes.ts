@@ -113,25 +113,30 @@ export const useNotes = () => {
   useEffect(() => {
     fetchNotes();
 
-    // Set up real-time listener for notes
-    const channel = supabase
-      .channel('notes-changes')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'notes'
-        },
-        (payload) => {
-          console.log('Note change:', payload);
-          fetchNotes();
-        }
-      )
+    // Set up real-time listeners for notes and profiles
+    const notesChannel = supabase
+      .channel('notes-and-profiles-changes')
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'notes'
+      }, (payload) => {
+        console.log('Note change:', payload);
+        fetchNotes();
+      })
+      .on('postgres_changes', {
+        event: 'UPDATE',
+        schema: 'public',
+        table: 'profiles'
+      }, (payload) => {
+        console.log('Profile change:', payload);
+        // Refetch notes to get updated profile info
+        fetchNotes();
+      })
       .subscribe();
 
     return () => {
-      supabase.removeChannel(channel);
+      supabase.removeChannel(notesChannel);
     };
   }, [fetchNotes]);
 

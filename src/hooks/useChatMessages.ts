@@ -18,45 +18,18 @@ interface Profile {
   avatar_url?: string;
 }
 
-// Cache for profiles to avoid repeated database calls
-let profilesCache: Profile[] | null = null;
-let profilesCacheTimestamp = 0;
-const PROFILES_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+// Import real-time profiles hook
+import { useProfilesRealtime } from './useProfilesRealtime';
 
 export const useChatMessages = () => {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [profiles, setProfiles] = useState<Profile[]>([]);
   const [loading, setLoading] = useState(true);
+  
+  // Use real-time profiles hook
+  const { profiles, profilesMap: realtimeProfilesMap, loading: profilesLoading } = useProfilesRealtime();
 
-  // Memoized profiles lookup for performance
-  const profilesMap = useMemo(() => {
-    return new Map(profiles.map(p => [p.id, p]));
-  }, [profiles]);
-
-  // Fetch all user profiles with caching
-  const fetchProfiles = useCallback(async () => {
-    try {
-      // Check cache first
-      const now = Date.now();
-      if (profilesCache && (now - profilesCacheTimestamp) < PROFILES_CACHE_TTL) {
-        setProfiles(profilesCache);
-        return;
-      }
-
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('id, name, avatar_url');
-      
-      if (error) throw error;
-      
-      const profilesData = data || [];
-      profilesCache = profilesData;
-      profilesCacheTimestamp = now;
-      setProfiles(profilesData);
-    } catch (error) {
-      console.error('Error fetching profiles:', error);
-    }
-  }, []);
+  // Memoized profiles lookup for performance (convert Map to array for backward compatibility)
+  const profilesMap = realtimeProfilesMap;
 
   // Optimized message fetching with pagination support
   const fetchMessages = useCallback(async (limit = 50, offset = 0) => {
@@ -204,16 +177,18 @@ export const useChatMessages = () => {
     let updateTimeout: NodeJS.Timeout | null = null;
     
     const initializeChat = async () => {
-      await fetchProfiles();
       if (mounted) await fetchMessages();
     };
 
-    initializeChat();
+    // Only initialize when profiles are loaded
+    if (!profilesLoading) {
+      initializeChat();
+    }
 
-    // Throttled real-time updates to prevent excessive re-renders
+    // Reduced throttling for better real-time experience  
     const handleRealtimeUpdate = (updateFn: () => void) => {
       if (updateTimeout) clearTimeout(updateTimeout);
-      updateTimeout = setTimeout(updateFn, 100); // 100ms throttle
+      updateTimeout = setTimeout(updateFn, 50); // Reduced to 50ms for better responsiveness
     };
 
     const messagesChannel = supabase
@@ -272,7 +247,7 @@ export const useChatMessages = () => {
       if (updateTimeout) clearTimeout(updateTimeout);
       supabase.removeChannel(messagesChannel);
     };
-  }, [profilesMap, fetchMessages, fetchProfiles]);
+  }, [profilesMap, fetchMessages, profilesLoading]);
 
   // Load more messages function for pagination
   const loadMoreMessages = useCallback(async () => {

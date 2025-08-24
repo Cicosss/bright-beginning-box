@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { DndContext, DragEndEvent, DragOverlay, DragStartEvent, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { useNotes } from '../hooks/useNotes';
 import { useAuth } from '../hooks/useAuth';
+import { useProfilesRealtime } from '../hooks/useProfilesRealtime';
 import { supabase } from '../integrations/supabase/client';
 import { Note } from '../types';
 import { NoteCardWithMentions } from './NoteCardWithMentions';
@@ -25,27 +26,12 @@ const DEFAULT_COLUMNS = [
 export function NotesView({ onNoteClick }: NotesViewProps) {
   const { notes, loading, createNote, updateNote, deleteNote } = useNotes();
   const { user } = useAuth();
+  const { profiles } = useProfilesRealtime(); // Use real-time profiles
   const [activeNote, setActiveNote] = useState<Note | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [selectedNote, setSelectedNote] = useState<Note | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
-  const [profiles, setProfiles] = useState<any[]>([]);
-
-  // Fetch profiles for mentions
-  useEffect(() => {
-    const fetchProfiles = async () => {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('id, name, avatar_url');
-      
-      if (!error && data) {
-        setProfiles(data);
-      }
-    };
-    
-    fetchProfiles();
-  }, []);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
