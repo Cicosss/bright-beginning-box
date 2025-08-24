@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import App from '../App';
+import { ChatMessagesProvider } from '../contexts/ChatMessagesContext';
 
 // Servizi essenziali del sistema
 interface SystemService {
@@ -64,7 +65,11 @@ const Index = () => {
   }, []);
 
   if (isSystemReady) {
-    return <App />;
+    return (
+      <ChatMessagesProvider>
+        <App />
+      </ChatMessagesProvider>
+    );
   }
 
   const overallProgress = services.reduce((acc, service) => acc + service.progress, 0) / services.length;
