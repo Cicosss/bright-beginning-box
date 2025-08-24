@@ -16,20 +16,20 @@ declare const google: any;
 // --- Utility Functions ---
 const getPriorityClass = (priority: Priority) => {
   switch (priority) {
-    case Priority.High: return 'bg-red-500 hover:bg-red-600';
-    case Priority.Medium: return 'bg-yellow-500 hover:bg-yellow-600';
-    case Priority.Low: return 'bg-green-500 hover:bg-green-600';
-    default: return 'bg-gray-400';
+    case Priority.High: return 'priority-high';
+    case Priority.Medium: return 'priority-medium';
+    case Priority.Low: return 'priority-low';
+    default: return 'bg-muted text-muted-foreground';
   }
 };
 
 const getEventTypeClass = (type: CalendarEvent['type']) => {
     switch(type) {
-      case 'shipment': return 'bg-red-500 border-red-700';
-      case 'task': return 'bg-yellow-500 border-yellow-700';
-      case 'pickup': return 'bg-green-500 border-green-700';
-      case 'meeting': return 'bg-purple-500 border-purple-700';
-      default: return 'bg-gray-500';
+      case 'shipment': return 'bg-destructive border-destructive';
+      case 'task': return 'bg-warning border-warning';
+      case 'pickup': return 'bg-success border-success';
+      case 'meeting': return 'bg-primary border-primary';
+      default: return 'bg-muted border-muted';
     }
 };
 
@@ -50,9 +50,9 @@ const Sidebar = ({ activeView, setActiveView, onSignOut }: { activeView: string,
   ];
 
   return (
-    <aside className="w-64 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 flex flex-col shadow-lg flex-shrink-0">
-      <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex items-center space-x-2">
-        <Icon name="fa-truck-fast" className="text-2xl text-blue-500" />
+    <aside className="w-64 bg-card text-card-foreground flex flex-col shadow-lg flex-shrink-0">
+      <div className="p-4 border-b border-border flex items-center space-x-2">
+        <Icon name="fa-truck-fast" className="text-2xl text-primary" />
         <h1 className="text-xl font-bold">RM Dashboard</h1>
       </div>
       <nav className="flex-grow p-4">
@@ -64,8 +64,8 @@ const Sidebar = ({ activeView, setActiveView, onSignOut }: { activeView: string,
                 onClick={(e) => { e.preventDefault(); setActiveView(item.id); }}
                 className={`flex items-center space-x-3 p-3 rounded-lg transition-colors duration-200 ${
                   activeView === item.id 
-                    ? 'bg-blue-500 text-white shadow-md' 
-                    : 'hover:bg-gray-200 dark:hover:bg-gray-700'
+                    ? 'bg-primary text-primary-foreground shadow-md' 
+                    : 'hover:bg-muted'
                 }`}
               >
                 <Icon name={item.icon} className="w-5 text-center" />
@@ -75,12 +75,12 @@ const Sidebar = ({ activeView, setActiveView, onSignOut }: { activeView: string,
           ))}
         </ul>
       </nav>
-      <div className="p-4 border-t border-gray-200 dark:border-gray-700">
+      <div className="p-4 border-t border-border">
         <div className="flex items-center space-x-3 mb-3">
           <img src={USERS[0].avatarUrl} alt={USERS[0].name} className="w-10 h-10 rounded-full" />
           <div>
             <p className="font-semibold">{USERS[0].name}</p>
-            <p className="text-sm text-gray-500 dark:text-gray-400">Responsabile</p>
+            <p className="text-sm text-muted-foreground">Responsabile</p>
           </div>
         </div>
         <button 
@@ -97,7 +97,7 @@ const Sidebar = ({ activeView, setActiveView, onSignOut }: { activeView: string,
 
 // --- HEADER Component ---
 const Header = ({ title, theme, onToggleTheme, onSearch }: { title: string, theme: string, onToggleTheme: () => void, onSearch: (query: string) => void }) => {
-  const [inputValue, setInputValue] = useState('');
+  const [inputValue, setInputValue] = React.useState('');
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -105,26 +105,26 @@ const Header = ({ title, theme, onToggleTheme, onSearch }: { title: string, them
   };
   
   return (
-    <header className="bg-white dark:bg-gray-800 p-4 shadow-md flex justify-between items-center z-10">
-      <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-200">{title}</h2>
+    <header className="bg-card p-4 shadow-md flex justify-between items-center z-10">
+      <h2 className="text-2xl font-bold text-card-foreground">{title}</h2>
       <div className="flex items-center space-x-4">
         <form onSubmit={handleSubmit} className="relative">
             <input 
               type="text" 
               placeholder="Cerca tag, menzioni..." 
-              className="pl-10 pr-4 py-2 w-64 rounded-lg border dark:bg-gray-700 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="pl-10 pr-4 py-2 w-64 rounded-lg border bg-background border-border focus:outline-none focus:ring-2 focus:ring-ring"
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
             />
-            <Icon name="fa-search" className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+            <Icon name="fa-search" className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
         </form>
-        <button onClick={onToggleTheme} className="p-2 w-10 h-10 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 flex items-center justify-center">
+        <button onClick={onToggleTheme} className="p-2 w-10 h-10 rounded-full hover:bg-muted flex items-center justify-center">
           <Icon name={theme === 'dark' ? 'fa-sun' : 'fa-moon'} />
         </button>
-        <button className="p-2 w-10 h-10 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700">
+        <button className="p-2 w-10 h-10 rounded-full hover:bg-muted">
           <Icon name="fa-bell" />
         </button>
-        <button className="p-2 w-10 h-10 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700">
+        <button className="p-2 w-10 h-10 rounded-full hover:bg-muted">
           <Icon name="fa-cog" />
         </button>
       </div>
@@ -159,12 +159,12 @@ const DashboardView = ({
   };
 
   const SummaryCard = ({ icon, title, value, color }: {icon: string, title: string, value: React.ReactNode, color: string}) => (
-    <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md flex items-center space-x-4">
-      <div className={`p-3 rounded-full ${color} text-white`}>
+    <div className="bg-card p-6 rounded-lg shadow-md flex items-center space-x-4">
+      <div className={`p-3 rounded-full ${color}`}>
         <Icon name={icon} className="text-2xl w-8 h-8 flex items-center justify-center" />
       </div>
       <div>
-        <p className="text-gray-500 dark:text-gray-400">{title}</p>
+        <p className="text-muted-foreground">{title}</p>
         <p className="text-2xl font-bold">{value}</p>
       </div>
     </div>
@@ -177,13 +177,13 @@ const DashboardView = ({
   };
   
   const DashboardShipmentCard: React.FC<{shipment: Shipment, onClick: () => void}> = ({shipment, onClick}) => (
-    <div onClick={onClick} className="p-2.5 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer border dark:border-gray-200 dark:border-gray-700/50">
+    <div onClick={onClick} className="p-2.5 rounded-md hover:bg-muted cursor-pointer border border-border">
         <div className="flex justify-between items-center">
             <p className="font-semibold text-sm">{shipment.orderNumber}</p>
-            <span className={`px-2 py-0.5 text-xs font-bold text-white rounded-full ${getPriorityClass(shipment.priority)}`}>{shipment.priority.slice(0,1)}</span>
+            <span className={`px-2 py-0.5 text-xs font-bold rounded-full ${getPriorityClass(shipment.priority)}`}>{shipment.priority.slice(0,1)}</span>
         </div>
-        <p className="text-xs text-gray-500 truncate">{shipment.customer.name}</p>
-        <p className="text-xs text-right text-gray-500 mt-1">{shipment.dueDate.toLocaleDateString()}</p>
+        <p className="text-xs text-muted-foreground truncate">{shipment.customer.name}</p>
+        <p className="text-xs text-right text-muted-foreground mt-1">{shipment.dueDate.toLocaleDateString()}</p>
     </div>
   );
   
@@ -194,24 +194,24 @@ const DashboardView = ({
   return (
     <div className="p-6 space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        <SummaryCard icon="fa-box" title="Spedizioni in attesa" value={summary.pendingShipments} color="bg-blue-500" />
-        <SummaryCard icon="fa-list-check" title="Task in scadenza oggi" value={summary.tasksDueToday} color="bg-yellow-500" />
+        <SummaryCard icon="fa-box" title="Spedizioni in attesa" value={summary.pendingShipments} color="bg-primary text-primary-foreground" />
+        <SummaryCard icon="fa-list-check" title="Task in scadenza oggi" value={summary.tasksDueToday} color="bg-warning text-warning-foreground" />
         <SummaryCard 
           icon="fa-truck" 
           title="Prossimo ritiro" 
           value={summary.nextPickup ? `${summary.nextPickup.title} @ ${summary.nextPickup.start.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}` : 'Nessuno'}
-          color="bg-green-500" 
+          color="bg-success text-success-foreground" 
         />
       </div>
 
-      <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
+      <div className="bg-card p-6 rounded-lg shadow-md">
           <h3 className="font-bold text-xl mb-4">Panoramica Spedizioni</h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {(Object.keys(shipmentsByStatus) as KanbanColumnID[]).map(status => (
                   <div key={status}>
                       <div className="flex items-center mb-3">
                           <h4 className="font-semibold text-md">{status}</h4>
-                          <span className="ml-2 bg-blue-100 text-blue-800 text-xs font-semibold px-2.5 py-0.5 rounded-full dark:bg-blue-900 dark:text-blue-300">
+                          <span className="ml-2 bg-primary/20 text-primary text-xs font-semibold px-2.5 py-0.5 rounded-full">
                               {shipmentsByStatus[status].length}
                           </span>
                       </div>
@@ -221,7 +221,7 @@ const DashboardView = ({
                                 .sort((a, b) => a.dueDate.getTime() - b.dueDate.getTime())
                                 .map(s => <DashboardShipmentCard key={s.id} shipment={s} onClick={() => onCardClick(s)} />)
                         ) : (
-                            <p className="text-sm text-gray-500 italic mt-4">Nessuna spedizione in questa fase.</p>
+                            <p className="text-sm text-muted-foreground italic mt-4">Nessuna spedizione in questa fase.</p>
                         )}
                       </div>
                   </div>
@@ -408,28 +408,28 @@ export default function App() {
   const { tasks, loading: tasksLoading } = useTasks();
   const { notes, loading: notesLoading } = useNotes();
   
-  const [activeView, setActiveView] = useState('dashboard');
-  const [theme, setTheme] = useState(localStorage.getItem('theme') || 'light');
-  const [selectedShipment, setSelectedShipment] = useState<Shipment | null>(null);
-  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
-  const [selectedNote, setSelectedNote] = useState<Note | null>(null);
-  const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
+  const [activeView, setActiveView] = React.useState('dashboard');
+  const [theme, setTheme] = React.useState(localStorage.getItem('theme') || 'light');
+  const [selectedShipment, setSelectedShipment] = React.useState<Shipment | null>(null);
+  const [selectedTask, setSelectedTask] = React.useState<Task | null>(null);
+  const [selectedNote, setSelectedNote] = React.useState<Note | null>(null);
+  const [selectedEvent, setSelectedEvent] = React.useState<CalendarEvent | null>(null);
 
   // Theme management
-  useEffect(() => {
+  React.useEffect(() => {
     document.documentElement.classList.toggle('dark', theme === 'dark');
     localStorage.setItem('theme', theme);
   }, [theme]);
 
   // Mock events for now
-  const events = useMemo<CalendarEvent[]>(() => [], []);
+  const events = React.useMemo<CalendarEvent[]>(() => [], []);
 
   // Compute loading/auth gate without early-returning before hooks
-  const isLoading = useMemo(() => (
+  const isLoading = React.useMemo(() => (
     authLoading || shipmentsLoading || tasksLoading || notesLoading
   ), [authLoading, shipmentsLoading, tasksLoading, notesLoading]);
 
-  const gatedView = useMemo(() => {
+  const gatedView = React.useMemo(() => {
     if (isLoading) {
       return (
         <div className="min-h-screen flex items-center justify-center">
@@ -446,15 +446,15 @@ export default function App() {
   }, [isLoading, user]);
 
 
-  const toggleTheme = useCallback(() => {
+  const toggleTheme = React.useCallback(() => {
     setTheme(prev => prev === 'dark' ? 'light' : 'dark');
   }, []);
 
-  const handleSignOut = useCallback(async () => {
+  const handleSignOut = React.useCallback(async () => {
     await signOut();
   }, [signOut]);
 
-  const handleSearch = useCallback((query: string) => {
+  const handleSearch = React.useCallback((query: string) => {
     console.log('Search:', query);
   }, []);
 
@@ -513,7 +513,7 @@ export default function App() {
 
   return (
     <ChatMessagesProvider>
-      <div className="flex h-screen bg-gray-100 dark:bg-gray-900">
+      <div className="flex h-screen bg-background">
         <Sidebar 
           activeView={activeView} 
           setActiveView={setActiveView}
