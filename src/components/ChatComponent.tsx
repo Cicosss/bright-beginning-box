@@ -37,15 +37,12 @@ const ChatComponent: React.FC = () => {
     }
 
     let processedContent = content;
-    mentions.forEach(mentionId => {
-      const profile = profiles.find(p => p.id === mentionId);
-      if (profile) {
-        const mentionText = `@${profile.name}`;
-        const regex = new RegExp(`@${profile.name}`, 'gi');
-        processedContent = processedContent.replace(regex, 
-          `<span class="bg-primary/20 text-primary font-semibold px-1 rounded">${mentionText}</span>`
-        );
-      }
+    mentions.forEach(mentionName => {
+      const mentionText = `@${mentionName}`;
+      const regex = new RegExp(`@${mentionName}`, 'gi');
+      processedContent = processedContent.replace(regex, 
+        `<span class="bg-primary/20 text-primary font-semibold px-1 rounded">${mentionText}</span>`
+      );
     });
 
     return <div dangerouslySetInnerHTML={{ __html: processedContent }} />;
@@ -117,9 +114,9 @@ const ChatComponent: React.FC = () => {
     
     try {
       const { content, mentionedUserIds } = parseMentions(input);
-      const success = await sendMessage(content, mentionedUserIds);
+      const result = await sendMessage(content, mentionedUserIds);
       
-      if (success) {
+      if (result.success) {
         setInput("");
       }
     } catch (error) {
