@@ -209,20 +209,6 @@ const ChatComponent: React.FC = () => {
 
   return (
     <div className="h-full flex flex-col bg-background">
-      {/* Memoized Chat Header */}
-      <div className="flex items-center gap-2 p-4 border-b border-border">
-        <MessageCircle className="w-5 h-5 text-primary" />
-        <div className="flex-1">
-          <h3 className="font-semibold">Chat di Lavoro</h3>
-          <p className="text-xs text-muted-foreground">
-            I messaggi si cancellano dopo 24 ore
-          </p>
-        </div>
-        <div className="flex items-center gap-1 text-xs text-muted-foreground">
-          <Users className="w-4 h-4" />
-          <span>{profiles.length}</span>
-        </div>
-      </div>
 
       {/* Optimized Messages Area */}
       <div className="flex-1 overflow-hidden">

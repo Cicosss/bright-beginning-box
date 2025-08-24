@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { ChevronDown, ChevronUp, MessageCircle, X } from 'lucide-react';
+import { ChevronDown, ChevronUp, MessageCircle, X, Users } from 'lucide-react';
 import { Button } from './ui/button';
 import ChatComponent from './ChatComponent';
 import { useChatMessagesContext } from '../contexts/ChatMessagesContext';
@@ -143,29 +143,40 @@ const CollapsibleChat: React.FC = () => {
       )}
 
       {/* Chat header with collapse button */}
-      <div className="flex items-center justify-between p-4 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
+      <div className="flex items-center justify-between p-4 border-t border-border bg-background">
         <div className="flex items-center gap-2">
           <MessageCircle className="w-5 h-5 text-primary" />
-          <h3 className="font-semibold">Chat di Lavoro</h3>
+          <div className="flex-1">
+            <h3 className="font-semibold">Chat di Lavoro</h3>
+            <p className="text-xs text-muted-foreground">
+              I messaggi si cancellano dopo 24 ore
+            </p>
+          </div>
           {unreadMessages.length > 0 && (
-            <div className="bg-primary text-primary-foreground text-xs rounded-full px-2 py-1 min-w-[20px] text-center notification-badge">
+            <div className="bg-primary text-primary-foreground text-xs rounded-full px-2 py-1 min-w-[20px] text-center notification-badge ml-2">
               {unreadMessages.length}
             </div>
           )}
         </div>
         
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={handleToggleCollapse}
-          className="p-2"
-        >
-          {isCollapsed ? (
-            <ChevronUp className="w-4 h-4" />
-          ) : (
-            <ChevronDown className="w-4 h-4" />
-          )}
-        </Button>
+        <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1 text-xs text-muted-foreground">
+            <Users className="w-4 h-4" />
+            <span>{messages.length > 0 ? '1+' : '0'}</span>
+          </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleToggleCollapse}
+            className="p-2"
+          >
+            {isCollapsed ? (
+              <ChevronUp className="w-4 h-4" />
+            ) : (
+              <ChevronDown className="w-4 h-4" />
+            )}
+          </Button>
+        </div>
       </div>
 
       {/* Chat content with animation */}
@@ -173,7 +184,7 @@ const CollapsibleChat: React.FC = () => {
         transition-all duration-300 ease-out overflow-hidden
         ${isCollapsed ? 'h-0 opacity-0' : 'h-80 opacity-100'}
       `}>
-        <div className="h-80 bg-white dark:bg-gray-800">
+        <div className="h-80 bg-background border-b border-border">
           <ChatComponent />
         </div>
       </div>
