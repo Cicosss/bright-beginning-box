@@ -19,8 +19,7 @@ interface NotesViewProps {
 const DEFAULT_COLUMNS = [
   { id: 'ideas', title: 'Idee', color: 'bg-blue-100 dark:bg-blue-900' },
   { id: 'in-progress', title: 'In Corso', color: 'bg-yellow-100 dark:bg-yellow-900' },
-  { id: 'completed', title: 'Completate', color: 'bg-green-100 dark:bg-green-900' },
-  { id: 'archived', title: 'Archiviate', color: 'bg-gray-100 dark:bg-gray-800' }
+  { id: 'completed', title: 'Completate', color: 'bg-green-100 dark:bg-green-900' }
 ];
 
 export function NotesView({ onNoteClick }: NotesViewProps) {
@@ -257,7 +256,7 @@ export function NotesView({ onNoteClick }: NotesViewProps) {
           onDragStart={handleDragStart}
           onDragEnd={handleDragEnd}
         >
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 h-full overflow-y-auto pb-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 h-full overflow-y-auto pb-6">
             {DEFAULT_COLUMNS.map((column) => (
               <NoteColumn
                 key={column.id}
