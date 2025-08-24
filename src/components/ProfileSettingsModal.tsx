@@ -49,6 +49,9 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({ isOp
         role: role.trim(),
         avatar_url: avatarUrl 
       });
+      
+      // Force a refresh of the profile data
+      window.location.reload();
       onClose();
     } catch (error) {
       console.error('Error updating profile:', error);
