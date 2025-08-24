@@ -44,7 +44,6 @@ const Sidebar = ({ activeView, setActiveView, onSignOut }: { activeView: string,
     { id: 'calendar', name: 'Calendario', icon: 'fa-calendar-days' },
     { id: 'gmail', name: 'Gmail', icon: 'fa-envelope' },
     { id: 'notes', name: 'Blocco Note', icon: 'fa-note-sticky' },
-    { id: 'chat', name: 'Chat', icon: 'fa-comments' },
   ];
 
   return (
@@ -573,8 +572,6 @@ export default function App() {
         return <GmailView />;
       case 'notes':
         return <NotesView notes={notes} onNoteClick={setSelectedNote} />;
-      case 'chat':
-        return <ChatView />;
       default:
         return <div className="p-6">Vista non trovata</div>;
     }
@@ -588,7 +585,6 @@ export default function App() {
       case 'calendar': return 'Calendario';
       case 'gmail': return 'Gmail';
       case 'notes': return 'Blocco Note';
-      case 'chat': return 'Chat';
       default: return 'Dashboard';
     }
   };
@@ -611,9 +607,16 @@ export default function App() {
           onSearch={handleSearch}
         />
         
-        <main className="flex-grow overflow-y-auto">
-          {renderView()}
-        </main>
+        <div className="flex-grow flex flex-col overflow-hidden">
+          <main className="flex-grow overflow-y-auto">
+            {renderView()}
+          </main>
+          
+          {/* Chat Component Fixed at Bottom */}
+          <div className="h-80 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 flex-shrink-0">
+            <ChatComponent />
+          </div>
+        </div>
       </div>
 
       {/* Modals */}
