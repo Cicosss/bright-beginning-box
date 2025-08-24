@@ -94,19 +94,13 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({ isOp
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               Ruolo in RM Multimedia
             </label>
-            <select
+            <input
+              type="text"
               value={role}
               onChange={(e) => setRole(e.target.value)}
+              placeholder="Inserisci il tuo ruolo"
               className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-            >
-              <option value="Dipendente">Dipendente</option>
-              <option value="Manager">Manager</option>
-              <option value="Team Lead">Team Lead</option>
-              <option value="Developer">Developer</option>
-              <option value="Designer">Designer</option>
-              <option value="Amministratore">Amministratore</option>
-              <option value="Direttore">Direttore</option>
-            </select>
+            />
           </div>
 
           {/* Avatar personalizzato */}
