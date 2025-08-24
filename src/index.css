@@ -228,6 +228,18 @@ body {
   50% { box-shadow: 0 0 30px hsl(var(--primary) / 0.6), 0 0 40px hsl(var(--primary) / 0.3); }
 }
 
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes bounceIn {
+  0% { opacity: 0; transform: scale(0.3); }
+  50% { opacity: 1; transform: scale(1.05); }
+  70% { transform: scale(0.9); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
 .animate-fade-in {
   animation: fadeIn 0.5s ease-out;
 }
@@ -242,6 +254,44 @@ body {
 
 .animate-pulse-glow {
   animation: pulse-glow 2s ease-in-out infinite;
+}
+
+.animate-slide-up {
+  animation: slideUp 0.4s ease-out;
+}
+
+.animate-bounce-in {
+  animation: bounceIn 0.6s ease-out;
+}
+
+/* Chat Notification Specific Styles */
+.chat-notification {
+  animation: slideUp 0.4s ease-out, scaleIn 0.3s ease-out;
+  transition: all 0.2s ease-out;
+}
+
+.chat-notification:hover {
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: var(--shadow-lg);
+}
+
+/* Chat Collapse Animation */
+.chat-collapse-enter {
+  transition: height 0.3s ease-out, opacity 0.3s ease-out;
+}
+
+.chat-collapse-exit {
+  transition: height 0.3s ease-out, opacity 0.3s ease-out;
+}
+
+/* Notification Badge Animation */
+.notification-badge {
+  animation: bounceIn 0.6s ease-out;
+  transition: all 0.2s ease-out;
+}
+
+.notification-badge:hover {
+  transform: scale(1.1);
 }
 
 /* Status Indicators */

@@ -6,7 +6,7 @@ import { useShipments } from './hooks/useShipments';
 import { useTasks } from './hooks/useTasks';
 import { useNotes } from './hooks/useNotes';
 import AuthPage from './components/AuthPage';
-import ChatComponent from './components/ChatComponent';
+import CollapsibleChat from './components/CollapsibleChat';
 
 declare const google: any;
 
@@ -477,13 +477,6 @@ const GmailView = () => (
   </div>
 );
 
-// Chat View
-const ChatView = () => (
-  <div className="h-full">
-    <ChatComponent />
-  </div>
-);
-
 // Main App Component
 export default function App() {
   const { user, loading: authLoading, signOut } = useAuth();
@@ -612,9 +605,9 @@ export default function App() {
             {renderView()}
           </main>
           
-          {/* Chat Component Fixed at Bottom */}
-          <div className="h-80 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 flex-shrink-0">
-            <ChatComponent />
+          {/* Collapsible Chat Component Fixed at Bottom */}
+          <div className="flex-shrink-0">
+            <CollapsibleChat />
           </div>
         </div>
       </div>
