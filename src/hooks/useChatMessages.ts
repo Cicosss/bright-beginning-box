@@ -99,11 +99,27 @@ export const useChatMessages = () => {
     }
   }, []);
 
-  // Send a new message - optimized 
+  // Send a new message with optimistic update
   const sendMessage = useCallback(async (content: string, mentionedUsers: string[] = []) => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('User not authenticated');
+
+      // Get user profile for optimistic update
+      const userProfile = profiles.find(p => p.id === user.id);
+      const optimisticMessage = {
+        id: `temp-${Date.now()}`,
+        content,
+        sender_id: user.id,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        sender_name: userProfile?.name || 'You',
+        sender_avatar: userProfile?.avatar_url,
+        mentions: mentionedUsers.map(id => profiles.find(p => p.id === id)?.name).filter(Boolean) as string[]
+      };
+
+      // Add optimistic message immediately
+      setMessages(prev => [...prev, optimisticMessage]);
 
       // Insert the message
       const { data: messageData, error: messageError } = await supabase
@@ -115,7 +131,11 @@ export const useChatMessages = () => {
         .select()
         .single();
 
-      if (messageError) throw messageError;
+      if (messageError) {
+        // Remove optimistic message on error
+        setMessages(prev => prev.filter(m => m.id !== optimisticMessage.id));
+        throw messageError;
+      }
 
       // Insert mentions if any
       if (mentionedUsers.length > 0 && messageData) {
@@ -128,15 +148,20 @@ export const useChatMessages = () => {
           .from('message_mentions')
           .insert(mentionInserts);
 
-        if (mentionsError) throw mentionsError;
+        if (mentionsError) {
+          console.error('Error inserting mentions:', mentionsError);
+        }
       }
+
+      // Replace optimistic message with real data when available
+      // Real-time listener will handle this automatically
 
       return { success: true };
     } catch (error) {
       console.error('Error sending message:', error);
       return { success: false, error };
     }
-  }, []);
+  }, [profiles]);
 
   // Parse @mentions from message content
   const parseMentions = useCallback((content: string): { content: string; mentionedUserIds: string[] } => {
@@ -157,7 +182,7 @@ export const useChatMessages = () => {
     return { content, mentionedUserIds };
   }, [profiles]);
 
-  // Initialize data and setup real-time listener - fixed dependency array
+  // Initialize data and setup real-time listener with targeted updates
   useEffect(() => {
     let mounted = true;
     
@@ -168,29 +193,94 @@ export const useChatMessages = () => {
 
     initializeChat();
 
-    // Optimized real-time listener - only refresh when needed
+    // Targeted real-time listeners for better performance
     const messagesChannel = supabase
-      .channel('chat-messages')
+      .channel('chat-messages-optimized')
       .on(
         'postgres_changes',
         {
-          event: '*',
+          event: 'INSERT',
           schema: 'public',
           table: 'messages'
         },
-        () => {
-          if (mounted) fetchMessages();
+        (payload) => {
+          if (mounted && payload.new) {
+            // Remove any temporary optimistic message with the same content
+            setMessages(prev => {
+              const filtered = prev.filter(m => 
+                !m.id.startsWith('temp-') || m.content !== payload.new.content
+              );
+              
+              // Add the real message with profile info
+              const senderProfile = profiles.find(p => p.id === payload.new.sender_id);
+              const newMessage = {
+                ...payload.new,
+                sender_name: senderProfile?.name || 'Unknown User',
+                sender_avatar: senderProfile?.avatar_url,
+                mentions: [] // Will be updated by mentions listener if needed
+              };
+              
+              return [...filtered, newMessage];
+            });
+          }
         }
       )
       .on(
         'postgres_changes',
         {
-          event: '*',
-          schema: 'public', 
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'messages'
+        },
+        (payload) => {
+          if (mounted && payload.new) {
+            setMessages(prev => 
+              prev.map(m => 
+                m.id === payload.new.id 
+                  ? { ...m, ...payload.new }
+                  : m
+              )
+            );
+          }
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'DELETE',
+          schema: 'public',
+          table: 'messages'
+        },
+        (payload) => {
+          if (mounted && payload.old) {
+            setMessages(prev => prev.filter(m => m.id !== payload.old.id));
+          }
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
           table: 'message_mentions'
         },
-        () => {
-          if (mounted) fetchMessages();
+        async (payload) => {
+          if (mounted && payload.new) {
+            // Update the specific message with mention info
+            const mentionedProfile = profiles.find(p => p.id === payload.new.mentioned_user_id);
+            if (mentionedProfile) {
+              setMessages(prev =>
+                prev.map(m => 
+                  m.id === payload.new.message_id
+                    ? { 
+                        ...m, 
+                        mentions: [...(m.mentions || []), mentionedProfile.name]
+                      }
+                    : m
+                )
+              );
+            }
+          }
         }
       )
       .subscribe();
@@ -199,7 +289,7 @@ export const useChatMessages = () => {
       mounted = false;
       supabase.removeChannel(messagesChannel);
     };
-  }, []); // Empty dependency array - no more loops
+  }, [profiles]); // Depend on profiles for real-time updates
 
   return {
     messages,

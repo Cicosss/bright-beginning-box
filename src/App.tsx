@@ -8,6 +8,7 @@ import { Shipment, Task, Priority, KanbanColumnID, CalendarEvent, Email, Note } 
 import { USERS } from './constants';
 import AuthPage from './components/AuthPage';
 import CollapsibleChat from './components/CollapsibleChat';
+import { ChatMessagesProvider } from './contexts/ChatMessagesContext';
 import { KanbanView } from './components/KanbanView';
 
 declare const google: any;
@@ -511,38 +512,40 @@ export default function App() {
   if (gatedView) return gatedView;
 
   return (
-    <div className="flex h-screen bg-gray-100 dark:bg-gray-900">
-      <Sidebar 
-        activeView={activeView} 
-        setActiveView={setActiveView}
-        onSignOut={handleSignOut}
-      />
-      
-      <div className="flex-grow flex flex-col overflow-hidden">
-        <Header 
-          title={getViewTitle()}
-          theme={theme}
-          onToggleTheme={toggleTheme}
-          onSearch={handleSearch}
+    <ChatMessagesProvider>
+      <div className="flex h-screen bg-gray-100 dark:bg-gray-900">
+        <Sidebar 
+          activeView={activeView} 
+          setActiveView={setActiveView}
+          onSignOut={handleSignOut}
         />
         
         <div className="flex-grow flex flex-col overflow-hidden">
-          <main className="flex-grow overflow-y-auto">
-            {renderView()}
-          </main>
+          <Header 
+            title={getViewTitle()}
+            theme={theme}
+            onToggleTheme={toggleTheme}
+            onSearch={handleSearch}
+          />
           
-          {/* Collapsible Chat Component Fixed at Bottom */}
-          <div className="flex-shrink-0">
-            <CollapsibleChat />
+          <div className="flex-grow flex flex-col overflow-hidden">
+            <main className="flex-grow overflow-y-auto">
+              {renderView()}
+            </main>
+            
+            {/* Collapsible Chat Component Fixed at Bottom */}
+            <div className="flex-shrink-0">
+              <CollapsibleChat />
+            </div>
           </div>
         </div>
-      </div>
 
-      {/* Modals */}
-      <ShipmentModal 
-        shipment={selectedShipment}
-        onClose={() => setSelectedShipment(null)}
-      />
-    </div>
+        {/* Modals */}
+        <ShipmentModal 
+          shipment={selectedShipment}
+          onClose={() => setSelectedShipment(null)}
+        />
+      </div>
+    </ChatMessagesProvider>
   );
 }

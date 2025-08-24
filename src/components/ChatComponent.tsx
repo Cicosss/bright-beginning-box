@@ -4,13 +4,13 @@ import { Button } from './ui/button';
 import { ChatMessageList } from './ui/chat-message-list';
 import { ChatBubble, ChatBubbleAvatar, ChatBubbleMessage } from './ui/chat-bubble';
 import { ChatInput } from './ui/chat-input';
-import { useChatMessages } from '../hooks/useChatMessages';
+import { useChatMessagesContext } from '../contexts/ChatMessagesContext';
 import { useAuth } from '../hooks/useAuth';
 import UserMentionDropdown from './UserMentionDropdown';
 
 const ChatComponent: React.FC = () => {
   const { user } = useAuth();
-  const { messages, profiles, loading, sendMessage, parseMentions } = useChatMessages();
+  const { messages, profiles, loading, sendMessage, parseMentions } = useChatMessagesContext();
   
   // State for message input
   const [input, setInput] = useState("");

@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { ChevronDown, ChevronUp, MessageCircle, X } from 'lucide-react';
 import { Button } from './ui/button';
 import ChatComponent from './ChatComponent';
-import { useChatMessages } from '../hooks/useChatMessages';
+import { useChatMessagesContext } from '../contexts/ChatMessagesContext';
 import { useAuth } from '../hooks/useAuth';
 
 interface UnreadMessage {
@@ -17,7 +17,7 @@ const CollapsibleChat: React.FC = () => {
   const [unreadMessages, setUnreadMessages] = useState<UnreadMessage[]>([]);
   const [lastReadTimestamp, setLastReadTimestamp] = useState<string>(new Date().toISOString());
   const { user } = useAuth();
-  const { messages } = useChatMessages();
+  const { messages } = useChatMessagesContext();
   const prevMessagesLengthRef = useRef(messages.length);
 
   // Monitor new messages when chat is collapsed
