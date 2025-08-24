@@ -6,6 +6,7 @@ import { useShipments } from './hooks/useShipments';
 import { useTasks } from './hooks/useTasks';
 import { useNotes } from './hooks/useNotes';
 import AuthPage from './components/AuthPage';
+import ChatComponent from './components/ChatComponent';
 
 declare const google: any;
 
@@ -43,6 +44,7 @@ const Sidebar = ({ activeView, setActiveView, onSignOut }: { activeView: string,
     { id: 'calendar', name: 'Calendario', icon: 'fa-calendar-days' },
     { id: 'gmail', name: 'Gmail', icon: 'fa-envelope' },
     { id: 'notes', name: 'Blocco Note', icon: 'fa-note-sticky' },
+    { id: 'chat', name: 'Chat', icon: 'fa-comments' },
   ];
 
   return (
@@ -476,6 +478,13 @@ const GmailView = () => (
   </div>
 );
 
+// Chat View
+const ChatView = () => (
+  <div className="h-full">
+    <ChatComponent />
+  </div>
+);
+
 // Main App Component
 export default function App() {
   const { user, loading: authLoading, signOut } = useAuth();
@@ -564,6 +573,8 @@ export default function App() {
         return <GmailView />;
       case 'notes':
         return <NotesView notes={notes} onNoteClick={setSelectedNote} />;
+      case 'chat':
+        return <ChatView />;
       default:
         return <div className="p-6">Vista non trovata</div>;
     }
@@ -577,6 +588,7 @@ export default function App() {
       case 'calendar': return 'Calendario';
       case 'gmail': return 'Gmail';
       case 'notes': return 'Blocco Note';
+      case 'chat': return 'Chat';
       default: return 'Dashboard';
     }
   };
