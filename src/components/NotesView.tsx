@@ -22,7 +22,7 @@ const DEFAULT_COLUMNS = [
 ];
 
 export function NotesView({ onNoteClick }: NotesViewProps) {
-  const { notes, profiles, loading, createNote, updateNote, parseMentions } = useNotes();
+  const { notes, loading, createNote, updateNote } = useNotes();
   const { user } = useAuth();
   const [activeNote, setActiveNote] = useState<Note | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
@@ -40,7 +40,7 @@ export function NotesView({ onNoteClick }: NotesViewProps) {
 
   // Group notes by notebook (using notebook as column)
   const notesByColumn = DEFAULT_COLUMNS.reduce((acc, column) => {
-    const columnNotes = (notes || []).filter(note => 
+    const columnNotes = notes.filter(note => 
       (note.notebook || 'ideas').toLowerCase().replace(/\s+/g, '-') === column.id &&
       (searchTerm === '' || 
         note.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -53,7 +53,7 @@ export function NotesView({ onNoteClick }: NotesViewProps) {
 
   const handleDragStart = (event: DragStartEvent) => {
     const { active } = event;
-    const note = (notes || []).find(n => n.id === active.id);
+    const note = notes.find(n => n.id === active.id);
     setActiveNote(note || null);
   };
 
@@ -70,7 +70,7 @@ export function NotesView({ onNoteClick }: NotesViewProps) {
     const newColumn = DEFAULT_COLUMNS.find(col => col.id === newColumnId);
     if (!newColumn) return;
 
-    const note = (notes || []).find(n => n.id === noteId);
+    const note = notes.find(n => n.id === noteId);
     if (!note) return;
 
     const currentColumnId = (note.notebook || 'ideas').toLowerCase().replace(/\s+/g, '-');
@@ -84,12 +84,7 @@ export function NotesView({ onNoteClick }: NotesViewProps) {
 
   const handleAddNote = async (noteData: Omit<Note, 'id' | 'lastModified'>) => {
     try {
-      // Parse mentions from title and content
-      const titleMentions = parseMentions(noteData.title);
-      const contentMentions = parseMentions(noteData.content);
-      const allMentions = [...new Set([...titleMentions, ...contentMentions])];
-      
-      await createNote(noteData, allMentions);
+      await createNote(noteData);
       setShowAddModal(false);
     } catch (error) {
       console.error('Errore nella creazione della nota:', error);
@@ -171,8 +166,6 @@ export function NotesView({ onNoteClick }: NotesViewProps) {
                 notes={notesByColumn[column.id] || []}
                 onNoteClick={onNoteClick || (() => {})}
                 onUpdateNote={updateNote}
-                profiles={profiles}
-                parseMentions={parseMentions}
               />
             ))}
           </div>
@@ -184,8 +177,6 @@ export function NotesView({ onNoteClick }: NotesViewProps) {
                 isDragging
                 onNoteClick={() => {}}
                 onUpdateNote={async () => {}}
-                profiles={profiles}
-                parseMentions={parseMentions}
               />
             ) : null}
           </DragOverlay>
@@ -199,7 +190,6 @@ export function NotesView({ onNoteClick }: NotesViewProps) {
           onClose={() => setShowAddModal(false)}
           onSave={handleAddNote}
           columns={DEFAULT_COLUMNS}
-          profiles={profiles}
         />
       )}
     </div>

@@ -100,7 +100,6 @@ export const KanbanView: React.FC<KanbanViewProps> = ({
   const [showNewShipmentForm, setShowNewShipmentForm] = useState(false);
 
   const shipmentsByStatus = useMemo(() => {
-    if (!shipments) return {};
     return KANBAN_COLUMNS.reduce((acc, status) => {
       acc[status] = shipments.filter(s => s.status === status);
       return acc;
@@ -128,7 +127,7 @@ export const KanbanView: React.FC<KanbanViewProps> = ({
             <KanbanColumn
               key={status}
               title={status}
-              shipments={shipmentsByStatus[status] || []}
+              shipments={shipmentsByStatus[status]}
               onCardClick={onCardClick}
               onUpdateStatus={onUpdateStatus}
             />
