@@ -18,6 +18,7 @@ import TodoListView from './components/TodoList';
 import CalendarView from './components/CalendarView';
 import { NotesView } from './components/NotesView';
 import { ProfileSettingsModal } from './components/ProfileSettingsModal';
+import { OnlineUsersBadge } from './components/OnlineUsersBadge';
 
 declare const google: any;
 
@@ -163,7 +164,14 @@ const Header = ({
   
   return (
     <header className="bg-white dark:bg-gray-800 p-4 shadow-md flex justify-between items-center z-10">
-      <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-200">{title}</h2>
+      <div className="flex items-center gap-3">
+        <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-200">{title}</h2>
+        {title === 'Dashboard' && (
+          <div className="relative group">
+            <OnlineUsersBadge className="animate-fade-in" />
+          </div>
+        )}
+      </div>
       <div className="flex items-center space-x-4">
         <form onSubmit={handleSubmit} className="relative">
             <input 
