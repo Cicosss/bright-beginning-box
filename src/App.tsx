@@ -10,6 +10,7 @@ import AuthPage from './components/AuthPage';
 import CollapsibleChat from './components/CollapsibleChat';
 import { ChatMessagesProvider } from './contexts/ChatMessagesContext';
 import { KanbanView } from './components/KanbanView';
+import TodoList from './components/TodoList';
 
 declare const google: any;
 
@@ -324,38 +325,6 @@ const ShipmentModal = ({ shipment, onClose }: { shipment: Shipment | null, onClo
 };
 
 
-// Simple Task List View
-const TaskListView = ({ tasks, onTaskClick }: { tasks: Task[], onTaskClick: (task: Task) => void }) => {
-  return (
-    <div className="p-6">
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md">
-        <div className="p-6">
-          <h3 className="text-xl font-bold mb-4">Lista Task</h3>
-          <div className="space-y-3">
-            {tasks.map(task => (
-              <div key={task.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer" onClick={() => onTaskClick(task)}>
-                <div className="flex items-center space-x-3">
-                  <div className={`w-3 h-3 rounded-full ${task.completed ? 'bg-green-500' : 'bg-gray-300'}`}></div>
-                  <div>
-                    <p className={`font-medium ${task.completed ? 'line-through text-gray-500' : ''}`}>{task.title}</p>
-                    <p className="text-sm text-gray-500">{task.assignedTo.name} • {task.category}</p>
-                  </div>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <span className={`px-2 py-1 text-xs font-bold text-white rounded-full ${getPriorityClass(task.priority)}`}>
-                    {task.priority}
-                  </span>
-                  <span className="text-sm text-gray-500">{task.dueDate.toLocaleDateString()}</span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
-
 // Simple Notes View
 const NotesView = ({ notes, onNoteClick }: { notes: Note[], onNoteClick: (note: Note) => void }) => {
   return (
@@ -485,7 +454,7 @@ export default function App() {
           />
         );
       case 'todo':
-        return <TaskListView tasks={tasks} onTaskClick={setSelectedTask} />;
+        return <TodoList onTaskClick={setSelectedTask} />;
       case 'calendar':
         return <CalendarView />;
       case 'gmail':
