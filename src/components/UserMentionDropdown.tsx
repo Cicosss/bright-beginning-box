@@ -32,9 +32,9 @@ const UserMentionDropdown: React.FC<UserMentionDropdownProps> = ({
 
   return (
     <div 
-      className="absolute z-50 bg-background border border-border rounded-lg shadow-lg min-w-[200px] max-h-[200px] overflow-y-auto"
+      className="fixed z-[9999] bg-background border border-border rounded-lg shadow-xl min-w-[200px] max-h-[200px] overflow-y-auto"
       style={{ 
-        top: position.top - 10, 
+        top: position.top + 10, 
         left: position.left 
       }}
     >

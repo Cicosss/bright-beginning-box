@@ -6,7 +6,7 @@ import { supabase } from '../integrations/supabase/client';
 import { Note } from '../types';
 import { NoteCardWithMentions } from './NoteCardWithMentions';
 import { NoteColumn } from './NoteColumn';
-import { AddNoteModal } from './AddNoteModal';
+import { AddNoteModalWithMentions } from './AddNoteModalWithMentions';
 import UserMentionDropdown from './UserMentionDropdown';
 import { Button } from './ui/button';
 import { Plus } from 'lucide-react';
@@ -53,15 +53,19 @@ export function NotesView({ onNoteClick }: NotesViewProps) {
     })
   );
 
-  // Group notes by notebook (using notebook as column)
+  // Group notes by notebook (using correct mapping)
   const notesByColumn = DEFAULT_COLUMNS.reduce((acc, column) => {
-    const columnNotes = notes.filter(note => 
-      (note.notebook || 'ideas').toLowerCase().replace(/\s+/g, '-') === column.id &&
-      (searchTerm === '' || 
+    const columnNotes = notes.filter(note => {
+      // Map column titles correctly
+      const noteNotebook = note.notebook || 'Idee';
+      const columnMatches = noteNotebook === column.title;
+      
+      const matchesSearch = searchTerm === '' || 
         note.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        note.content.toLowerCase().includes(searchTerm.toLowerCase())
-      )
-    );
+        note.content.toLowerCase().includes(searchTerm.toLowerCase());
+      
+      return columnMatches && matchesSearch;
+    });
     acc[column.id] = columnNotes;
     return acc;
   }, {} as Record<string, Note[]>);
@@ -88,23 +92,23 @@ export function NotesView({ onNoteClick }: NotesViewProps) {
     const note = notes.find(n => n.id === noteId);
     if (!note) return;
 
-    const currentColumnId = (note.notebook || 'ideas').toLowerCase().replace(/\s+/g, '-');
+    const currentNotebook = note.notebook || 'Idee';
     
-    if (currentColumnId !== newColumnId) {
+    if (currentNotebook !== newColumn.title) {
       await updateNote(noteId, {
         notebook: newColumn.title
       });
     }
   };
 
-  // Parse mentions utility
+  // Parse mentions utility - fixed regex to handle names with spaces
   const parseMentions = useCallback((content: string): { content: string; mentionedUserIds: string[] } => {
-    const mentionRegex = /@(\w+)/g;
+    const mentionRegex = /@([^@\s]+(?:\s+[^@\s]+)*)/g;
     const mentions = content.match(mentionRegex) || [];
     const mentionedUserIds: string[] = [];
     
     mentions.forEach(mention => {
-      const username = mention.substring(1);
+      const username = mention.substring(1).trim();
       mentionedUserIds.push(username);
     });
 
@@ -121,10 +125,10 @@ export function NotesView({ onNoteClick }: NotesViewProps) {
       
       // Handle mentions separately
       if (mentionedUserIds.length > 0 && newNote) {
-        // Get profiles to map names to IDs
+        // Get profiles to map names to IDs - improved matching
         const matchedProfiles = profiles.filter(profile => 
           mentionedUserIds.some(name => 
-            profile.name.toLowerCase().includes(name.toLowerCase())
+            profile.name.toLowerCase() === name.toLowerCase()
           )
         );
 
@@ -159,10 +163,10 @@ export function NotesView({ onNoteClick }: NotesViewProps) {
       
       // Handle mentions separately if content was updated
       if (updates.content && mentionedUserIds.length > 0) {
-        // Get profiles to map names to IDs
+        // Get profiles to map names to IDs - improved matching
         const matchedProfiles = profiles.filter(profile => 
           mentionedUserIds.some(name => 
-            profile.name.toLowerCase().includes(name.toLowerCase())
+            profile.name.toLowerCase() === name.toLowerCase()
           )
         );
 
@@ -275,7 +279,7 @@ export function NotesView({ onNoteClick }: NotesViewProps) {
 
       {/* Add Note Modal */}
       {showAddModal && (
-        <AddNoteModal
+        <AddNoteModalWithMentions
           isOpen={showAddModal}
           onClose={() => setShowAddModal(false)}
           onSave={handleAddNote}
