@@ -22,7 +22,7 @@ const DEFAULT_COLUMNS = [
 ];
 
 export function NotesView({ onNoteClick }: NotesViewProps) {
-  const { notes, loading, createNote, updateNote } = useNotes();
+  const { notes, profiles, loading, createNote, updateNote, parseMentions } = useNotes();
   const { user } = useAuth();
   const [activeNote, setActiveNote] = useState<Note | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
@@ -84,7 +84,12 @@ export function NotesView({ onNoteClick }: NotesViewProps) {
 
   const handleAddNote = async (noteData: Omit<Note, 'id' | 'lastModified'>) => {
     try {
-      await createNote(noteData);
+      // Parse mentions from title and content
+      const titleMentions = parseMentions(noteData.title);
+      const contentMentions = parseMentions(noteData.content);
+      const allMentions = [...new Set([...titleMentions, ...contentMentions])];
+      
+      await createNote(noteData, allMentions);
       setShowAddModal(false);
     } catch (error) {
       console.error('Errore nella creazione della nota:', error);
@@ -166,6 +171,8 @@ export function NotesView({ onNoteClick }: NotesViewProps) {
                 notes={notesByColumn[column.id] || []}
                 onNoteClick={onNoteClick || (() => {})}
                 onUpdateNote={updateNote}
+                profiles={profiles}
+                parseMentions={parseMentions}
               />
             ))}
           </div>
@@ -177,6 +184,8 @@ export function NotesView({ onNoteClick }: NotesViewProps) {
                 isDragging
                 onNoteClick={() => {}}
                 onUpdateNote={async () => {}}
+                profiles={profiles}
+                parseMentions={parseMentions}
               />
             ) : null}
           </DragOverlay>
@@ -190,6 +199,7 @@ export function NotesView({ onNoteClick }: NotesViewProps) {
           onClose={() => setShowAddModal(false)}
           onSave={handleAddNote}
           columns={DEFAULT_COLUMNS}
+          profiles={profiles}
         />
       )}
     </div>

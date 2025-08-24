@@ -4,16 +4,18 @@ import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { Note } from '../types';
 import { NoteCard } from './NoteCard';
 
-type NoteColumnProps = {
+interface NoteColumnProps {
   id: string;
   title: string;
   color: string;
   notes: Note[];
   onNoteClick: (note: Note) => void;
-  onUpdateNote: (noteId: string, updates: Partial<Note>) => Promise<void>;
+  onUpdateNote: (noteId: string, updates: Partial<Note>, mentionedUserIds?: string[]) => Promise<void>;
+  profiles: Array<{ id: string; name: string; avatar_url?: string }>;
+  parseMentions: (content: string) => string[];
 }
 
-export const NoteColumn: React.FC<NoteColumnProps> = ({ id, title, color, notes, onNoteClick, onUpdateNote }) => {
+export function NoteColumn({ id, title, color, notes, onNoteClick, onUpdateNote, profiles, parseMentions }: NoteColumnProps) {
   const { setNodeRef, isOver } = useDroppable({
     id,
   });
@@ -48,6 +50,8 @@ export const NoteColumn: React.FC<NoteColumnProps> = ({ id, title, color, notes,
               note={note}
               onNoteClick={onNoteClick}
               onUpdateNote={onUpdateNote}
+              profiles={profiles}
+              parseMentions={parseMentions}
             />
           ))}
         </SortableContext>

@@ -1,489 +1,138 @@
-import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react';
-import './index.css';
-import { useAuth } from './hooks/useAuth';
-import { useShipments } from './hooks/useShipments';
-import { useTasks } from './hooks/useTasks';
-import { useNotes } from './hooks/useNotes';
-import { useCalendarEvents } from './hooks/useCalendarEvents';
-import { Shipment, Task, Priority, KanbanColumnID, CalendarEvent, Email, Note } from './types';
-import { USERS } from './constants';
+import { useState } from 'react';
+import { Package, Calendar, StickyNote, Users, MessageSquare, Bell } from 'lucide-react';
 import AuthPage from './components/AuthPage';
-import CollapsibleChat from './components/CollapsibleChat';
-import { ChatMessagesProvider } from './contexts/ChatMessagesContext';
 import { KanbanView } from './components/KanbanView';
-import TodoListView from './components/TodoList';
 import CalendarView from './components/CalendarView';
+import TodoList from './components/TodoList';
 import { NotesView } from './components/NotesView';
+import CollapsibleChat from './components/CollapsibleChat';
+import { useAuth } from './hooks/useAuth';
+import { useNoteMentions } from './hooks/useNoteMentions';
 
-declare const google: any;
+function App() {
+  const { user, loading: authLoading } = useAuth();
+  const { unreadCount, markMentionsAsRead } = useNoteMentions();
+  const [activeTab, setActiveTab] = useState<string>('shipments');
 
-// --- Utility Functions ---
-const getPriorityClass = (priority: Priority) => {
-  switch (priority) {
-    case Priority.High: return 'bg-red-500 hover:bg-red-600';
-    case Priority.Medium: return 'bg-yellow-500 hover:bg-yellow-600';
-    case Priority.Low: return 'bg-green-500 hover:bg-green-600';
-    default: return 'bg-gray-400';
-  }
-};
-
-const getEventTypeClass = (type: CalendarEvent['type']) => {
-    switch(type) {
-      case 'shipment': return 'bg-red-500 border-red-700';
-      case 'task': return 'bg-yellow-500 border-yellow-700';
-      case 'pickup': return 'bg-green-500 border-green-700';
-      case 'meeting': return 'bg-purple-500 border-purple-700';
-      default: return 'bg-gray-500';
+  const handleTabChange = (tab: string) => {
+    setActiveTab(tab);
+    // Mark note mentions as read when user clicks on Notes tab
+    if (tab === 'notes' && unreadCount > 0) {
+      markMentionsAsRead();
     }
-};
+  };
 
-// --- ICON Component ---
-const Icon = ({ name, className }: { name: string; className?: string }) => (
-  <i className={`fa-solid ${name} ${className || ''}`}></i>
-);
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
 
-// --- SIDEBAR Component ---
-const Sidebar = ({ activeView, setActiveView, onSignOut }: { activeView: string, setActiveView: (view: string) => void, onSignOut: () => void }) => {
-  const menuItems = [
-    { id: 'dashboard', name: 'Dashboard', icon: 'fa-table-columns' },
-    { id: 'kanban', name: 'Spedizioni', icon: 'fa-brands fa-trello' },
-    { id: 'todo', name: 'To-Do List', icon: 'fa-list-check' },
-    { id: 'calendar', name: 'Calendario', icon: 'fa-calendar-days' },
-    { id: 'gmail', name: 'Gmail', icon: 'fa-envelope' },
-    { id: 'notes', name: 'Blocco Note', icon: 'fa-note-sticky' },
+  if (!user) {
+    return <AuthPage />;
+  }
+
+  const tabs = [
+    { id: 'shipments', label: 'Spedizioni', icon: Package, component: KanbanView },
+    { 
+      id: 'notes', 
+      label: 'Note', 
+      icon: StickyNote, 
+      component: NotesView,
+      badge: unreadCount > 0 ? unreadCount : undefined
+    },
+    { id: 'tasks', label: 'Tasks', icon: Users, component: TodoList },
+    { id: 'calendar', label: 'Calendario', icon: Calendar, component: CalendarView },
   ];
 
-  return (
-    <aside className="w-64 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 flex flex-col shadow-lg flex-shrink-0">
-      <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex items-center space-x-2">
-        <Icon name="fa-truck-fast" className="text-2xl text-blue-500" />
-        <h1 className="text-xl font-bold">RM Dashboard</h1>
-      </div>
-      <nav className="flex-grow p-4">
-        <ul>
-          {menuItems.map(item => (
-            <li key={item.id} className="mb-2">
-              <a
-                href="#"
-                onClick={(e) => { e.preventDefault(); setActiveView(item.id); }}
-                className={`flex items-center space-x-3 p-3 rounded-lg transition-colors duration-200 ${
-                  activeView === item.id 
-                    ? 'bg-blue-500 text-white shadow-md' 
-                    : 'hover:bg-gray-200 dark:hover:bg-gray-700'
-                }`}
-              >
-                <Icon name={item.icon} className="w-5 text-center" />
-                <span>{item.name}</span>
-              </a>
-            </li>
-          ))}
-        </ul>
-      </nav>
-      <div className="p-4 border-t border-gray-200 dark:border-gray-700">
-        <div className="flex items-center space-x-3 mb-3">
-          <img src={USERS[0].avatarUrl} alt={USERS[0].name} className="w-10 h-10 rounded-full" />
-          <div>
-            <p className="font-semibold">{USERS[0].name}</p>
-            <p className="text-sm text-gray-500 dark:text-gray-400">Responsabile</p>
-          </div>
-        </div>
-        <button 
-          onClick={onSignOut}
-          className="btn btn-secondary w-full text-sm"
-        >
-          <Icon name="fa-sign-out-alt" className="mr-2" />
-          Esci
-        </button>
-      </div>
-    </aside>
-  );
-};
-
-// --- HEADER Component ---
-const Header = ({ title, theme, onToggleTheme, onSearch }: { title: string, theme: string, onToggleTheme: () => void, onSearch: (query: string) => void }) => {
-  const [inputValue, setInputValue] = useState('');
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    onSearch(inputValue);
-  };
-  
-  return (
-    <header className="bg-white dark:bg-gray-800 p-4 shadow-md flex justify-between items-center z-10">
-      <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-200">{title}</h2>
-      <div className="flex items-center space-x-4">
-        <form onSubmit={handleSubmit} className="relative">
-            <input 
-              type="text" 
-              placeholder="Cerca tag, menzioni..." 
-              className="pl-10 pr-4 py-2 w-64 rounded-lg border dark:bg-gray-700 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              value={inputValue}
-              onChange={(e) => setInputValue(e.target.value)}
-            />
-            <Icon name="fa-search" className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-        </form>
-        <button onClick={onToggleTheme} className="p-2 w-10 h-10 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 flex items-center justify-center">
-          <Icon name={theme === 'dark' ? 'fa-sun' : 'fa-moon'} />
-        </button>
-        <button className="p-2 w-10 h-10 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700">
-          <Icon name="fa-bell" />
-        </button>
-        <button className="p-2 w-10 h-10 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700">
-          <Icon name="fa-cog" />
-        </button>
-      </div>
-    </header>
-  );
-};
-
-// --- DASHBOARD VIEW ---
-const DashboardView = ({ 
-    shipments, 
-    tasks, 
-    events, 
-    notes,
-    onCardClick, 
-    onTaskClick,
-    onNoteClick,
-    onEventClick
-}: { 
-    shipments: Shipment[], 
-    tasks: Task[], 
-    events: CalendarEvent[],
-    notes: Note[],
-    onCardClick: (s: Shipment) => void, 
-    onTaskClick: (t: Task) => void,
-    onNoteClick: (n: Note) => void,
-    onEventClick: (e: CalendarEvent) => void,
-}) => {
-  const summary = {
-    pendingShipments: shipments.filter(s => s.status === KanbanColumnID.ToDo || s.status === KanbanColumnID.InProgress).length,
-    tasksDueToday: tasks.filter(t => !t.completed && new Date(t.dueDate).toDateString() === new Date().toDateString()).length,
-    nextPickup: events.find(e => e.type === 'pickup' && e.start > new Date())
-  };
-
-  const SummaryCard = ({ icon, title, value, color }: {icon: string, title: string, value: React.ReactNode, color: string}) => (
-    <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md flex items-center space-x-4">
-      <div className={`p-3 rounded-full ${color} text-white`}>
-        <Icon name={icon} className="text-2xl w-8 h-8 flex items-center justify-center" />
-      </div>
-      <div>
-        <p className="text-gray-500 dark:text-gray-400">{title}</p>
-        <p className="text-2xl font-bold">{value}</p>
-      </div>
-    </div>
-  );
-  
-  const shipmentsByStatus = {
-    [KanbanColumnID.ToDo]: shipments.filter(s => s.status === KanbanColumnID.ToDo),
-    [KanbanColumnID.InProgress]: shipments.filter(s => s.status === KanbanColumnID.InProgress),
-    [KanbanColumnID.Ready]: shipments.filter(s => s.status === KanbanColumnID.Ready),
-  };
-  
-  const DashboardShipmentCard: React.FC<{shipment: Shipment, onClick: () => void}> = ({shipment, onClick}) => (
-    <div onClick={onClick} className="p-2.5 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer border dark:border-gray-200 dark:border-gray-700/50">
-        <div className="flex justify-between items-center">
-            <p className="font-semibold text-sm">{shipment.orderNumber}</p>
-            <span className={`px-2 py-0.5 text-xs font-bold text-white rounded-full ${getPriorityClass(shipment.priority)}`}>{shipment.priority.slice(0,1)}</span>
-        </div>
-        <p className="text-xs text-gray-500 truncate">{shipment.customer.name}</p>
-        <p className="text-xs text-right text-gray-500 mt-1">{shipment.dueDate.toLocaleDateString()}</p>
-    </div>
-  );
-  
-  const recentTasks = tasks.filter(t => !t.completed).sort((a,b) => a.dueDate.getTime() - b.dueDate.getTime()).slice(0, 5);
-  const recentNotes = notes.sort((a, b) => b.lastModified.getTime() - a.lastModified.getTime()).slice(0, 3);
-  const todayEvents = events.filter(e => new Date(e.start).toDateString() === new Date().toDateString()).sort((a,b) => a.start.getTime() - b.start.getTime());
+  const ActiveComponent = tabs.find(tab => tab.id === activeTab)?.component || KanbanView;
 
   return (
-    <div className="p-6 space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        <SummaryCard icon="fa-box" title="Spedizioni in attesa" value={summary.pendingShipments} color="bg-blue-500" />
-        <SummaryCard icon="fa-list-check" title="Task in scadenza oggi" value={summary.tasksDueToday} color="bg-yellow-500" />
-        <SummaryCard 
-          icon="fa-truck" 
-          title="Prossimo ritiro" 
-          value={summary.nextPickup ? `${summary.nextPickup.title} @ ${summary.nextPickup.start.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}` : 'Nessuno'}
-          color="bg-green-500" 
-        />
-      </div>
-
-      <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
-          <h3 className="font-bold text-xl mb-4">Panoramica Spedizioni</h3>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {(Object.keys(shipmentsByStatus) as KanbanColumnID[]).map(status => (
-                  <div key={status}>
-                      <div className="flex items-center mb-3">
-                          <h4 className="font-semibold text-md">{status}</h4>
-                          <span className="ml-2 bg-blue-100 text-blue-800 text-xs font-semibold px-2.5 py-0.5 rounded-full dark:bg-blue-900 dark:text-blue-300">
-                              {shipmentsByStatus[status].length}
-                          </span>
-                      </div>
-                      <div className="space-y-2 max-h-72 overflow-y-auto pr-2 custom-scrollbar">
-                        {shipmentsByStatus[status].length > 0 ? (
-                            shipmentsByStatus[status]
-                                .sort((a, b) => a.dueDate.getTime() - b.dueDate.getTime())
-                                .map(s => <DashboardShipmentCard key={s.id} shipment={s} onClick={() => onCardClick(s)} />)
-                        ) : (
-                            <p className="text-sm text-gray-500 italic mt-4">Nessuna spedizione in questa fase.</p>
-                        )}
-                      </div>
-                  </div>
-              ))}
-          </div>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-md">
-              <h3 className="font-bold text-lg mb-4">Task Urgenti</h3>
-              <ul className="space-y-2">
-                  {recentTasks.map(t => (
-                      <li key={t.id} onClick={() => onTaskClick(t)} className="flex justify-between items-center p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer">
-                          <div>
-                              <p className="font-semibold">{t.title}</p>
-                              <p className="text-sm text-gray-500">{t.assignedTo.name}</p>
-                          </div>
-                          <div className="text-right">
-                              <p className="text-sm">{t.dueDate.toLocaleDateString()}</p>
-                               <span className={`px-2 py-1 text-xs font-bold text-white rounded-full ${getPriorityClass(t.priority)}`}>{t.priority}</span>
-                          </div>
-                      </li>
-                  ))}
-              </ul>
-          </div>
-          <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-md">
-              <h3 className="font-bold text-lg mb-4">Note Recenti</h3>
-              <ul className="space-y-2">
-                  {recentNotes.map(n => (
-                      <li key={n.id} onClick={() => onNoteClick(n)} className="flex items-center space-x-3 p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer">
-                          <Icon name="fa-note-sticky" className="text-yellow-400" />
-                          <div>
-                              <p className="font-semibold">{n.title}</p>
-                              <p className="text-sm text-gray-500">{n.notebook}</p>
-                          </div>
-                      </li>
-                  ))}
-              </ul>
-          </div>
-          <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-md">
-              <h3 className="font-bold text-lg mb-4">Eventi di Oggi</h3>
-              <ul className="space-y-2">
-                  {todayEvents.length > 0 ? todayEvents.map(e => (
-                      <li key={e.id} onClick={() => onEventClick(e)} className="flex items-center space-x-3 p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer">
-                          <span className={`w-3 h-3 rounded-full flex-shrink-0 ${getEventTypeClass(e.type)}`}></span>
-                          <div>
-                              <p className="font-semibold">{e.title}</p>
-                              <p className="text-sm text-gray-500">{e.start.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
-                          </div>
-                      </li>
-                  )) : <p className="text-sm text-gray-500">Nessun evento per oggi.</p>}
-              </ul>
-          </div>
-      </div>
-    </div>
-  );
-};
-
-
-// Simple modal for shipment details
-const ShipmentModal = ({ shipment, onClose }: { shipment: Shipment | null, onClose: () => void }) => {
-    if (!shipment) return null;
-
-    return (
-        <div className="fixed inset-0 bg-black bg-opacity-60 z-50 flex justify-center items-center p-4">
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-                <div className="p-6 border-b dark:border-gray-700 flex justify-between items-center">
-                    <h3 className="text-2xl font-bold">{shipment.orderNumber}</h3>
-                    <button onClick={onClose} className="text-gray-500 hover:text-gray-800 dark:hover:text-white transition">
-                        <Icon name="fa-times" className="text-2xl" />
-                    </button>
-                </div>
-                <div className="p-6">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div>
-                            <h4 className="font-bold mb-2">Cliente</h4>
-                            <p>{shipment.customer.name}</p>
-                            <p className="text-sm text-gray-500">{shipment.customer.address}</p>
-                        </div>
-                        <div>
-                            <h4 className="font-bold mb-2">Dettagli</h4>
-                            <p><strong>Tracking:</strong> {shipment.trackingNumber}</p>
-                            <p><strong>Scadenza:</strong> {shipment.dueDate.toLocaleDateString()}</p>
-                            <p><strong>Priorità:</strong> <span className={`px-2 py-1 text-xs font-bold text-white rounded-full ${getPriorityClass(shipment.priority)}`}>{shipment.priority}</span></p>
-                            <p><strong>Assegnato a:</strong> {shipment.assignedTo.name}</p>
-                        </div>
-                    </div>
-                    <div className="mt-6">
-                        <h4 className="font-bold mb-2">Prodotti</h4>
-                        <ul className="list-disc list-inside">
-                            {shipment.products.map(p => (
-                                <li key={p.id}>{p.quantity}x {p.name}</li>
-                            ))}
-                        </ul>
-                    </div>
-                </div>
-            </div>
+    <div className="min-h-screen bg-background text-foreground flex">
+      {/* Sidebar */}
+      <div className="w-64 bg-card border-r border-border flex flex-col">
+        <div className="p-6 border-b border-border">
+          <h1 className="text-xl font-bold text-foreground">Sistema RM</h1>
+          <p className="text-sm text-muted-foreground">Gestione logistica</p>
         </div>
-    );
-};
-
-
-// Simple placeholder views
-const GmailView = () => (
-  <div className="p-6">
-    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
-      <h3 className="text-xl font-bold mb-4">Gmail</h3>
-      <p className="text-gray-500">Integrazione Gmail in sviluppo...</p>
-    </div>
-  </div>
-);
-
-// Main App Component
-export default function App() {
-  const { user, loading: authLoading, signOut } = useAuth();
-  const { shipments, loading: shipmentsLoading, updateShipmentStatus, createShipment, createCustomer, createProduct } = useShipments();
-  const { tasks, loading: tasksLoading } = useTasks();
-  const { notes, loading: notesLoading } = useNotes();
-  const { events } = useCalendarEvents();
-  
-  const [activeView, setActiveView] = useState('dashboard');
-  const [theme, setTheme] = useState(localStorage.getItem('theme') || 'light');
-  const [selectedShipment, setSelectedShipment] = useState<Shipment | null>(null);
-  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
-  const [selectedNote, setSelectedNote] = useState<Note | null>(null);
-  const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
-
-  // Theme management
-  useEffect(() => {
-    document.documentElement.classList.toggle('dark', theme === 'dark');
-    localStorage.setItem('theme', theme);
-  }, [theme]);
-
-  // Mock events for now - ora utilizzando eventi reali
-  // const events = useMemo<CalendarEvent[]>(() => [], []);
-
-  // Compute loading/auth gate without early-returning before hooks
-  const isLoading = useMemo(() => (
-    authLoading || shipmentsLoading || tasksLoading || notesLoading
-  ), [authLoading, shipmentsLoading, tasksLoading, notesLoading]);
-
-  const gatedView = useMemo(() => {
-    if (isLoading) {
-      return (
-        <div className="min-h-screen flex items-center justify-center">
-          <div className="text-primary">
-            <i className="fas fa-spinner animate-spin text-3xl"></i>
-          </div>
-        </div>
-      );
-    }
-    if (!user) {
-      return <AuthPage />;
-    }
-    return null;
-  }, [isLoading, user]);
-
-
-  const toggleTheme = useCallback(() => {
-    setTheme(prev => prev === 'dark' ? 'light' : 'dark');
-  }, []);
-
-  const handleSignOut = useCallback(async () => {
-    await signOut();
-  }, [signOut]);
-
-  const handleSearch = useCallback((query: string) => {
-    console.log('Search:', query);
-  }, []);
-
-  const renderView = () => {
-    switch (activeView) {
-      case 'dashboard':
-        return (
-          <DashboardView
-            shipments={shipments}
-            tasks={tasks}
-            events={events}
-            notes={notes}
-            onCardClick={setSelectedShipment}
-            onTaskClick={setSelectedTask}
-            onNoteClick={setSelectedNote}
-            onEventClick={setSelectedEvent}
-          />
-        );
-      case 'kanban':
-        return (
-          <KanbanView 
-            shipments={shipments} 
-            onCardClick={setSelectedShipment} 
-            onUpdateStatus={updateShipmentStatus}
-            createShipment={createShipment}
-            createCustomer={createCustomer}
-            createProduct={createProduct}
-          />
-        );
-      case 'todo':
-        return <TodoListView onTaskClick={setSelectedTask} />;
-      case 'calendar':
-        return <CalendarView onEventClick={setSelectedEvent} />;
-      case 'gmail':
-        return <GmailView />;
-      case 'notes':
-        return <NotesView onNoteClick={setSelectedNote} />;
-      default:
-        return <div className="p-6">Vista non trovata</div>;
-    }
-  };
-
-  const getViewTitle = () => {
-    switch (activeView) {
-      case 'dashboard': return 'Dashboard';
-      case 'kanban': return 'Spedizioni';
-      case 'todo': return 'To-Do List';
-      case 'calendar': return 'Calendario';
-      case 'gmail': return 'Gmail';
-      case 'notes': return 'Blocco Note';
-      default: return 'Dashboard';
-    }
-  };
-
-  if (gatedView) return gatedView;
-
-  return (
-    <ChatMessagesProvider>
-      <div className="flex h-screen bg-gray-100 dark:bg-gray-900">
-        <Sidebar 
-          activeView={activeView} 
-          setActiveView={setActiveView}
-          onSignOut={handleSignOut}
-        />
         
-        <div className="flex-grow flex flex-col overflow-hidden">
-          <Header 
-            title={getViewTitle()}
-            theme={theme}
-            onToggleTheme={toggleTheme}
-            onSearch={handleSearch}
-          />
-          
-          <div className="flex-grow flex flex-col overflow-hidden">
-            <main className="flex-grow overflow-y-auto">
-              {renderView()}
-            </main>
-            
-            {/* Collapsible Chat Component Fixed at Bottom */}
-            <div className="flex-shrink-0">
-              <CollapsibleChat />
+        <nav className="flex-1 p-4">
+          <div className="space-y-2">
+            {tabs.map((tab) => (
+              <button
+                key={tab.id}
+                className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors w-full ${
+                  activeTab === tab.id
+                    ? 'bg-primary text-primary-foreground'
+                    : 'text-muted-foreground hover:text-foreground hover:bg-accent'
+                }`}
+                onClick={() => handleTabChange(tab.id)}
+              >
+                <tab.icon className="w-4 h-4" />
+                {tab.label}
+                {tab.badge && (
+                  <span className="ml-auto bg-destructive text-destructive-foreground text-xs px-1.5 py-0.5 rounded-full min-w-5 text-center">
+                    {tab.badge}
+                  </span>
+                )}
+              </button>
+            ))}
+          </div>
+        </nav>
+        
+        <div className="p-4 border-t border-border">
+          <div className="flex items-center gap-3 mb-3">
+            <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center">
+              <span className="text-primary-foreground text-sm font-medium">
+                {user?.email?.charAt(0).toUpperCase()}
+              </span>
+            </div>
+            <div className="flex-1">
+              <p className="text-sm font-medium text-foreground truncate">
+                {user?.user_metadata?.name || user?.email}
+              </p>
+              <p className="text-xs text-muted-foreground">Admin</p>
             </div>
           </div>
+          <button 
+            className="w-full px-3 py-2 text-sm bg-accent text-accent-foreground rounded-lg hover:bg-accent/80 transition-colors"
+            onClick={() => console.log('Settings')}
+          >
+            Impostazioni
+          </button>
         </div>
-
-        {/* Modals */}
-        <ShipmentModal 
-          shipment={selectedShipment}
-          onClose={() => setSelectedShipment(null)}
-        />
       </div>
-    </ChatMessagesProvider>
+
+      {/* Main Content */}
+      <div className="flex-1 flex flex-col min-h-0">
+        {/* Header */}
+        <header className="h-16 bg-card border-b border-border flex items-center justify-between px-6">
+          <div>
+            <h2 className="text-lg font-semibold text-foreground">
+              {tabs.find(tab => tab.id === activeTab)?.label || 'Dashboard'}
+            </h2>
+          </div>
+          <div className="flex items-center gap-2">
+            <button className="p-2 hover:bg-accent rounded-lg transition-colors">
+              <Bell className="w-4 h-4 text-muted-foreground" />
+            </button>
+          </div>
+        </header>
+
+        {/* Content */}
+        <main className="flex-1 overflow-hidden">
+          <div className="h-full p-6">
+            <ActiveComponent />
+          </div>
+        </main>
+      </div>
+
+      {/* Chat */}
+      <CollapsibleChat />
+    </div>
   );
 }
+
+export default App;
