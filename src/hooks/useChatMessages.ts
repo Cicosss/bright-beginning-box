@@ -98,12 +98,9 @@ export const useChatMessages = () => {
 
   // Send a new message
   const sendMessage = useCallback(async (content: string, mentionedUsers: string[] = []) => {
-    console.log('Sending message:', content, 'with mentions:', mentionedUsers);
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('User not authenticated');
-
-      console.log('User authenticated:', user.id);
 
       // Insert the message
       const { data: messageData, error: messageError } = await supabase
@@ -115,8 +112,6 @@ export const useChatMessages = () => {
         .select()
         .single();
 
-      console.log('Message insert result:', messageData, messageError);
-
       if (messageError) throw messageError;
 
       // Insert mentions if any
@@ -126,8 +121,6 @@ export const useChatMessages = () => {
           mentioned_user_id: userId
         }));
 
-        console.log('Inserting mentions:', mentionInserts);
-
         const { error: mentionsError } = await supabase
           .from('message_mentions')
           .insert(mentionInserts);
@@ -135,7 +128,6 @@ export const useChatMessages = () => {
         if (mentionsError) throw mentionsError;
       }
 
-      console.log('Message sent successfully');
       return { success: true };
     } catch (error) {
       console.error('Error sending message:', error);
@@ -145,26 +137,20 @@ export const useChatMessages = () => {
 
   // Parse @mentions from message content
   const parseMentions = useCallback((content: string): { content: string; mentionedUserIds: string[] } => {
-    console.log('Parsing mentions for content:', content);
-    console.log('Available profiles:', profiles);
-    
     const mentionRegex = /@(\w+)/g;
     const mentions = content.match(mentionRegex) || [];
     const mentionedUserIds: string[] = [];
 
     mentions.forEach(mention => {
       const username = mention.substring(1); // Remove @
-      console.log('Looking for username:', username);
       const profile = profiles.find(p => 
         p.name.toLowerCase().includes(username.toLowerCase())
       );
-      console.log('Found profile:', profile);
       if (profile) {
         mentionedUserIds.push(profile.id);
       }
     });
 
-    console.log('Final mentionedUserIds:', mentionedUserIds);
     return { content, mentionedUserIds };
   }, [profiles]);
 
