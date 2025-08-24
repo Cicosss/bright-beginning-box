@@ -20,29 +20,48 @@ const getPriorityClass = (priority: string) => {
   }
 };
 
-const KanbanCard: React.FC<{ shipment: Shipment, onClick: () => void }> = ({ shipment, onClick }) => (
+const KanbanCard: React.FC<{ shipment: Shipment, onClick: () => void, onDelete: (shipmentId: string) => void }> = ({ shipment, onClick, onDelete }) => (
   <div 
     draggable="true"
     onDragStart={(e) => {
       e.dataTransfer.setData('shipmentId', shipment.id);
     }}
-    onClick={onClick} 
-    className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-md mb-4 cursor-pointer hover:shadow-xl transition-shadow"
+    className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-md mb-4 cursor-pointer hover:shadow-xl transition-shadow group relative"
   >
-    <div className="flex justify-between items-start">
-      <h4 className="font-bold text-md">{shipment.orderNumber}</h4>
-      <span className={`px-2 py-1 text-xs font-bold text-white rounded-full ${getPriorityClass(shipment.priority)}`}>
-        {shipment.priority}
-      </span>
-    </div>
-    <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{shipment.customer.name}</p>
-    <div className="mt-4 flex justify-between items-center">
-      <div className="flex items-center space-x-2 text-sm text-gray-500 dark:text-gray-400">
-        <Icon name="fa-calendar-alt" />
-        <span>{shipment.dueDate.toLocaleDateString()}</span>
+    <div 
+      onClick={onClick}
+      className="w-full h-full"
+    >
+      <div className="flex justify-between items-start">
+        <h4 className="font-bold text-md">{shipment.orderNumber}</h4>
+        <div className="flex items-center space-x-2">
+          <span className={`px-2 py-1 text-xs font-bold text-white rounded-full ${getPriorityClass(shipment.priority)}`}>
+            {shipment.priority}
+          </span>
+        </div>
       </div>
-      <img src={shipment.assignedTo.avatarUrl} alt={shipment.assignedTo.name} className="w-8 h-8 rounded-full ring-2 ring-white dark:ring-gray-800" />
+      <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{shipment.customer.name}</p>
+      <div className="mt-4 flex justify-between items-center">
+        <div className="flex items-center space-x-2 text-sm text-gray-500 dark:text-gray-400">
+          <Icon name="fa-calendar-alt" />
+          <span>{shipment.dueDate.toLocaleDateString()}</span>
+        </div>
+        <img src={shipment.assignedTo.avatarUrl} alt={shipment.assignedTo.name} className="w-8 h-8 rounded-full ring-2 ring-white dark:ring-gray-800" />
+      </div>
     </div>
+    
+    <button
+      onClick={(e) => {
+        e.stopPropagation();
+        if (window.confirm('Sei sicuro di voler eliminare questa spedizione?')) {
+          onDelete(shipment.id);
+        }
+      }}
+      className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity bg-red-500 hover:bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs"
+      title="Elimina spedizione"
+    >
+      <Icon name="fa-trash" />
+    </button>
   </div>
 );
 
@@ -50,8 +69,9 @@ const KanbanColumn: React.FC<{
   title: KanbanColumnID, 
   shipments: Shipment[], 
   onCardClick: (shipment: Shipment) => void, 
-  onUpdateStatus: (shipmentId: string, newStatus: KanbanColumnID) => void 
-}> = ({ title, shipments, onCardClick, onUpdateStatus }) => {
+  onUpdateStatus: (shipmentId: string, newStatus: KanbanColumnID) => void,
+  onDelete: (shipmentId: string) => void
+}> = ({ title, shipments, onCardClick, onUpdateStatus, onDelete }) => {
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
   };
@@ -73,7 +93,7 @@ const KanbanColumn: React.FC<{
       <h3 className="font-bold text-lg mb-4 px-2">{title} ({shipments.length})</h3>
       <div className="min-h-[200px]">
         {shipments.map(shipment => (
-          <KanbanCard key={shipment.id} shipment={shipment} onClick={() => onCardClick(shipment)} />
+          <KanbanCard key={shipment.id} shipment={shipment} onClick={() => onCardClick(shipment)} onDelete={onDelete} />
         ))}
       </div>
     </div>
@@ -84,6 +104,7 @@ interface KanbanViewProps {
   shipments: Shipment[];
   onCardClick: (shipment: Shipment) => void;
   onUpdateStatus: (shipmentId: string, newStatus: KanbanColumnID) => void;
+  onDelete: (shipmentId: string) => void;
   createShipment: (data: any) => Promise<void>;
   createCustomer: (data: any) => Promise<any>;
   createProduct: (data: any) => Promise<any>;
@@ -93,6 +114,7 @@ export const KanbanView: React.FC<KanbanViewProps> = ({
   shipments, 
   onCardClick, 
   onUpdateStatus, 
+  onDelete,
   createShipment, 
   createCustomer, 
   createProduct 
@@ -130,6 +152,7 @@ export const KanbanView: React.FC<KanbanViewProps> = ({
               shipments={shipmentsByStatus[status]}
               onCardClick={onCardClick}
               onUpdateStatus={onUpdateStatus}
+              onDelete={onDelete}
             />
           ))}
         </div>

@@ -413,7 +413,7 @@ export default function App() {
   const { user, loading: authLoading, signOut } = useAuth();
   const { unreadCount, markAsRead } = useNotificationsBadge();
   const { profile, loading: profileLoading } = useProfile();
-  const { shipments, loading: shipmentsLoading, updateShipmentStatus, createShipment, createCustomer, createProduct } = useShipments();
+  const { shipments, loading: shipmentsLoading, updateShipmentStatus, deleteShipment, createShipment, createCustomer, createProduct } = useShipments();
   const { tasks, loading: tasksLoading } = useTasks();
   const { notes, loading: notesLoading } = useNotes();
   const { events } = useCalendarEvents();
@@ -490,6 +490,7 @@ export default function App() {
             shipments={shipments} 
             onCardClick={setSelectedShipment} 
             onUpdateStatus={updateShipmentStatus}
+            onDelete={deleteShipment}
             createShipment={createShipment}
             createCustomer={createCustomer}
             createProduct={createProduct}

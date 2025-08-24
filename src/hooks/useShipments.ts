@@ -209,11 +209,28 @@ export const useShipments = () => {
     }
   }, [fetchShipments]);
 
+  const deleteShipment = useCallback(async (shipmentId: string) => {
+    try {
+      const { error } = await supabase
+        .from('shipments')
+        .delete()
+        .eq('id', shipmentId);
+
+      if (error) throw error;
+      
+      setShipments(prev => prev.filter(s => s.id !== shipmentId));
+    } catch (error) {
+      console.error('Errore nell\'eliminazione spedizione:', error);
+      throw error;
+    }
+  }, []);
+
   return {
     shipments,
     loading,
     refetch: fetchShipments,
     updateShipmentStatus,
+    deleteShipment,
     createShipment,
     createCustomer,
     createProduct
