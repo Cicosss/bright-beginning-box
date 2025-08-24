@@ -6,7 +6,7 @@ import { Calendar, Share2, Edit3, Users } from 'lucide-react';
 import { Button } from './ui/button';
 import UserMentionDropdown from './UserMentionDropdown';
 
-interface NoteCardProps {
+export interface NoteCardProps {
   note: Note;
   isDragging?: boolean;
   onNoteClick: (note: Note) => void;
@@ -15,7 +15,7 @@ interface NoteCardProps {
   parseMentions: (content: string) => string[];
 }
 
-export function NoteCard({ note, isDragging = false, onNoteClick, onUpdateNote, profiles, parseMentions }: NoteCardProps) {
+export const NoteCard: React.FC<NoteCardProps> = ({ note, isDragging = false, onNoteClick, onUpdateNote, profiles, parseMentions }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [title, setTitle] = useState(note.title);
   const [content, setContent] = useState(note.content);

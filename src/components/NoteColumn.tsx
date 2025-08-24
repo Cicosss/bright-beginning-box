@@ -4,7 +4,7 @@ import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { Note } from '../types';
 import { NoteCard } from './NoteCard';
 
-interface NoteColumnProps {
+export interface NoteColumnProps {
   id: string;
   title: string;
   color: string;
@@ -15,7 +15,7 @@ interface NoteColumnProps {
   parseMentions: (content: string) => string[];
 }
 
-export function NoteColumn({ id, title, color, notes, onNoteClick, onUpdateNote, profiles, parseMentions }: NoteColumnProps) {
+export const NoteColumn: React.FC<NoteColumnProps> = ({ id, title, color, notes, onNoteClick, onUpdateNote, profiles, parseMentions }) => {
   const { setNodeRef, isOver } = useDroppable({
     id,
   });
