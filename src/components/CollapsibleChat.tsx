@@ -13,7 +13,7 @@ interface UnreadMessage {
 }
 
 const CollapsibleChat: React.FC = () => {
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(true);
   const [unreadMessages, setUnreadMessages] = useState<UnreadMessage[]>([]);
   const [lastReadTimestamp, setLastReadTimestamp] = useState<string>(new Date().toISOString());
   const { user } = useAuth();
