@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@fortawesome/fontawesome-free": "^7.0.0",
+    "@supabase/supabase-js": "^2.56.0",
     "@vitejs/plugin-react-swc": "^4.0.1",
     "lovable-tagger": "^1.1.9",
     "react": "^19.1.1",
