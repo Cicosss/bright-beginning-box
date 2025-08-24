@@ -643,6 +643,25 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: string
       }
+      get_customers_by_role: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          address: string
+          created_at: string
+          email: string
+          id: string
+          name: string
+          phone: string
+          updated_at: string
+        }[]
+      }
+      get_customers_for_selection: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          id: string
+          name: string
+        }[]
+      }
       insert_note_mentions: {
         Args: { mentions_data: Json }
         Returns: undefined

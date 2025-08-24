@@ -8,57 +8,70 @@ export const useShipments = () => {
 
   const fetchShipments = useCallback(async () => {
     try {
+      // Get shipments data - customer data will be limited based on user role
       const { data: shipmentsData, error: shipmentsError } = await supabase
         .from('shipments')
         .select(`
           *,
-          customer:customers(*),
           assigned_to:profiles!shipments_assigned_to_fkey(*),
           products:shipment_products(*, product:products(*)),
           attachments(*),
           comments(*, author:profiles!comments_author_id_fkey(*))
         `);
+        
+      // Get customer data using role-based function
+      const { data: customersData, error: customersError } = await supabase.rpc('get_customers_by_role');
 
       if (shipmentsError) throw shipmentsError;
+      if (customersError) console.warn('Accesso limitato ai dati clienti:', customersError);
 
-      const mappedShipments: Shipment[] = (shipmentsData || []).map(s => ({
-        id: s.id,
-        orderNumber: s.order_number,
-        trackingNumber: s.tracking_number || '',
-        customer: {
-          name: s.customer?.name || '',
-          address: s.customer?.address || ''
-        },
-        products: (s.products || []).map(p => ({
-          id: p.product?.id || '',
-          name: p.product?.name || '',
-          quantity: p.quantity
-        })),
-        assignedTo: {
-          id: s.assigned_to?.id || '',
-          name: s.assigned_to?.name || 'Non assegnato',
-          avatarUrl: s.assigned_to?.avatar_url || 'https://picsum.photos/100/100'
-        },
-        dueDate: new Date(s.due_date || Date.now()),
-        priority: s.priority as Priority || Priority.Medium,
-        status: s.status as KanbanColumnID || KanbanColumnID.ToDo,
-        attachments: (s.attachments || []).map(a => ({
-          id: a.id,
-          name: a.name,
-          url: a.url,
-          type: a.type as 'document' | 'image'
-        })),
-        comments: (s.comments || []).map(c => ({
-          id: c.id,
-          author: {
-            id: c.author?.id || '',
-            name: c.author?.name || 'Utente',
-            avatarUrl: c.author?.avatar_url || 'https://picsum.photos/100/100'
+      // Create a customer lookup map
+      const customersMap = (customersData || []).reduce((acc, customer) => {
+        acc[customer.id] = customer;
+        return acc;
+      }, {} as Record<string, any>);
+
+      const mappedShipments: Shipment[] = (shipmentsData || []).map(s => {
+        const customer = customersMap[s.customer_id];
+        return {
+          id: s.id,
+          orderNumber: s.order_number,
+          trackingNumber: s.tracking_number || '',
+          customer: {
+            name: customer?.name || 'Cliente non disponibile',
+            address: customer?.address || ''
           },
-          text: c.text,
-          timestamp: new Date(c.created_at)
-        }))
-      }));
+          products: (s.products || []).map(p => ({
+            id: p.product?.id || '',
+            name: p.product?.name || '',
+            quantity: p.quantity
+          })),
+          assignedTo: {
+            id: s.assigned_to?.id || '',
+            name: s.assigned_to?.name || 'Non assegnato',
+            avatarUrl: s.assigned_to?.avatar_url || 'https://picsum.photos/100/100'
+          },
+          dueDate: new Date(s.due_date || Date.now()),
+          priority: s.priority as Priority || Priority.Medium,
+          status: s.status as KanbanColumnID || KanbanColumnID.ToDo,
+          attachments: (s.attachments || []).map(a => ({
+            id: a.id,
+            name: a.name,
+            url: a.url,
+            type: a.type as 'document' | 'image'
+          })),
+          comments: (s.comments || []).map(c => ({
+            id: c.id,
+            author: {
+              id: c.author?.id || '',
+              name: c.author?.name || 'Utente',
+              avatarUrl: c.author?.avatar_url || 'https://picsum.photos/100/100'
+            },
+            text: c.text,
+            timestamp: new Date(c.created_at)
+          }))
+        };
+      });
 
       setShipments(mappedShipments);
     } catch (error) {

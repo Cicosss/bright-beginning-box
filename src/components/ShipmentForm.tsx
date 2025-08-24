@@ -73,8 +73,13 @@ export const ShipmentForm: React.FC<ShipmentFormProps> = ({
   }, []);
 
   const fetchCustomers = async () => {
-    const { data } = await supabase.from('customers').select('*');
-    setCustomers(data || []);
+    try {
+      const { data } = await supabase.rpc('get_customers_for_selection');
+      setCustomers(data || []);
+    } catch (error) {
+      console.error('Errore nel caricamento clienti:', error);
+      setCustomers([]);
+    }
   };
 
   const fetchProducts = async () => {
