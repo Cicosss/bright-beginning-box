@@ -2,7 +2,7 @@ import React from 'react';
 import { useDroppable } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { Note } from '../types';
-import { NoteCard } from './NoteCard';
+import { NoteCardWithMentions } from './NoteCardWithMentions';
 
 type NoteColumnProps = {
   id: string;
@@ -45,11 +45,13 @@ export const NoteColumn: React.FC<NoteColumnProps> = ({ id, title, color, notes,
       >
         <SortableContext items={notes.map(note => note.id)} strategy={verticalListSortingStrategy}>
           {notes.map((note) => (
-            <NoteCard
+            <NoteCardWithMentions
               key={note.id}
               note={note}
               onNoteClick={onNoteClick}
               onUpdateNote={onUpdateNote}
+              profiles={profiles}
+              parseMentions={parseMentions}
             />
           ))}
         </SortableContext>

@@ -268,6 +268,42 @@ export type Database = {
         }
         Relationships: []
       }
+      note_mentions: {
+        Row: {
+          created_at: string
+          id: string
+          mentioned_user_id: string
+          note_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          mentioned_user_id: string
+          note_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          mentioned_user_id?: string
+          note_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "note_mentions_mentioned_user_id_fkey"
+            columns: ["mentioned_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "note_mentions_note_id_fkey"
+            columns: ["note_id"]
+            isOneToOne: false
+            referencedRelation: "notes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notes: {
         Row: {
           content: string | null
@@ -556,6 +592,14 @@ export type Database = {
     Functions: {
       cleanup_old_messages: {
         Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
+      delete_note_mentions: {
+        Args: { note_id: string }
+        Returns: undefined
+      }
+      insert_note_mentions: {
+        Args: { mentions_data: Json }
         Returns: undefined
       }
     }

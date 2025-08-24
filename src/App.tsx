@@ -5,6 +5,7 @@ import { useShipments } from './hooks/useShipments';
 import { useTasks } from './hooks/useTasks';
 import { useNotes } from './hooks/useNotes';
 import { useCalendarEvents } from './hooks/useCalendarEvents';
+import { useNotificationsBadge } from './hooks/useNotificationsBadge';
 import { Shipment, Task, Priority, KanbanColumnID, CalendarEvent, Email, Note } from './types';
 import { USERS } from './constants';
 import AuthPage from './components/AuthPage';
@@ -43,7 +44,19 @@ const Icon = ({ name, className }: { name: string; className?: string }) => (
 );
 
 // --- SIDEBAR Component ---
-const Sidebar = ({ activeView, setActiveView, onSignOut }: { activeView: string, setActiveView: (view: string) => void, onSignOut: () => void }) => {
+const Sidebar = ({ 
+  activeView, 
+  setActiveView, 
+  onSignOut, 
+  unreadNotifications = 0, 
+  onMarkNotificationsRead 
+}: { 
+  activeView: string, 
+  setActiveView: (view: string) => void, 
+  onSignOut: () => void,
+  unreadNotifications?: number,
+  onMarkNotificationsRead?: () => void
+}) => {
   const menuItems = [
     { id: 'dashboard', name: 'Dashboard', icon: 'fa-table-columns' },
     { id: 'kanban', name: 'Spedizioni', icon: 'fa-brands fa-trello' },
@@ -65,15 +78,28 @@ const Sidebar = ({ activeView, setActiveView, onSignOut }: { activeView: string,
             <li key={item.id} className="mb-2">
               <a
                 href="#"
-                onClick={(e) => { e.preventDefault(); setActiveView(item.id); }}
-                className={`flex items-center space-x-3 p-3 rounded-lg transition-colors duration-200 ${
+                onClick={(e) => { 
+                  e.preventDefault(); 
+                  setActiveView(item.id);
+                  if (item.id === 'notes' && unreadNotifications > 0 && onMarkNotificationsRead) {
+                    onMarkNotificationsRead();
+                  }
+                }}
+                className={`flex items-center justify-between space-x-3 p-3 rounded-lg transition-colors duration-200 ${
                   activeView === item.id 
                     ? 'bg-blue-500 text-white shadow-md' 
                     : 'hover:bg-gray-200 dark:hover:bg-gray-700'
                 }`}
               >
-                <Icon name={item.icon} className="w-5 text-center" />
-                <span>{item.name}</span>
+                <div className="flex items-center space-x-3">
+                  <Icon name={item.icon} className="w-5 text-center" />
+                  <span>{item.name}</span>
+                </div>
+                {item.id === 'notes' && unreadNotifications > 0 && (
+                  <span className="px-2 py-1 bg-red-500 text-white text-xs rounded-full font-semibold">
+                    {unreadNotifications}
+                  </span>
+                )}
               </a>
             </li>
           ))}
@@ -341,6 +367,7 @@ const GmailView = () => (
 // Main App Component
 export default function App() {
   const { user, loading: authLoading, signOut } = useAuth();
+  const { unreadCount, markAsRead } = useNotificationsBadge();
   const { shipments, loading: shipmentsLoading, updateShipmentStatus, createShipment, createCustomer, createProduct } = useShipments();
   const { tasks, loading: tasksLoading } = useTasks();
   const { notes, loading: notesLoading } = useNotes();
@@ -456,6 +483,8 @@ export default function App() {
           activeView={activeView} 
           setActiveView={setActiveView}
           onSignOut={handleSignOut}
+          unreadNotifications={unreadCount}
+          onMarkNotificationsRead={markAsRead}
         />
         
         <div className="flex-grow flex flex-col overflow-hidden">

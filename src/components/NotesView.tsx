@@ -4,7 +4,7 @@ import { useNotes } from '../hooks/useNotes';
 import { useAuth } from '../hooks/useAuth';
 import { supabase } from '../integrations/supabase/client';
 import { Note } from '../types';
-import { NoteCard } from './NoteCard';
+import { NoteCardWithMentions } from './NoteCardWithMentions';
 import { NoteColumn } from './NoteColumn';
 import { AddNoteModal } from './AddNoteModal';
 import UserMentionDropdown from './UserMentionDropdown';
@@ -135,7 +135,7 @@ export function NotesView({ onNoteClick }: NotesViewProps) {
           }));
 
           // Insert mentions directly
-          await supabase.rpc('insert_note_mentions', { mentions_data: mentions });
+          await (supabase as any).rpc('insert_note_mentions', { mentions_data: mentions });
         }
       }
       
@@ -168,7 +168,7 @@ export function NotesView({ onNoteClick }: NotesViewProps) {
 
         if (matchedProfiles.length > 0) {
           // Delete existing mentions
-          await supabase.rpc('delete_note_mentions', { note_id: noteId });
+          await (supabase as any).rpc('delete_note_mentions', { note_id: noteId });
           
           // Insert new mentions
           const mentions = matchedProfiles.map(profile => ({
@@ -176,7 +176,7 @@ export function NotesView({ onNoteClick }: NotesViewProps) {
             mentioned_user_id: profile.id
           }));
 
-          await supabase.rpc('insert_note_mentions', { mentions_data: mentions });
+          await (supabase as any).rpc('insert_note_mentions', { mentions_data: mentions });
         }
       }
     } catch (error) {
@@ -259,14 +259,16 @@ export function NotesView({ onNoteClick }: NotesViewProps) {
           </div>
 
           <DragOverlay>
-            {activeNote ? (
-              <NoteCard
-                note={activeNote}
-                isDragging
-                onNoteClick={() => {}}
-                onUpdateNote={async () => {}}
-              />
-            ) : null}
+          {activeNote ? (
+            <NoteCardWithMentions
+              note={activeNote}
+              isDragging
+              onNoteClick={() => {}}
+              onUpdateNote={async () => {}}
+              profiles={profiles}
+              parseMentions={parseMentions}
+            />
+          ) : null}
           </DragOverlay>
         </DndContext>
       </div>

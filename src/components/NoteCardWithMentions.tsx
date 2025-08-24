@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { Note } from '../types';
@@ -15,7 +15,7 @@ type NoteCardProps = {
   parseMentions?: (content: string) => { content: string; mentionedUserIds: string[] };
 }
 
-export const NoteCard: React.FC<NoteCardProps> = ({ 
+export const NoteCardWithMentions: React.FC<NoteCardProps> = ({ 
   note, 
   isDragging = false, 
   onNoteClick, 
@@ -47,7 +47,7 @@ export const NoteCard: React.FC<NoteCardProps> = ({
     opacity: isSortableDragging ? 0.5 : 1,
   };
 
-  const handleContentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+  const handleContentChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const newContent = e.target.value;
     setContent(newContent);
 
@@ -71,10 +71,10 @@ export const NoteCard: React.FC<NoteCardProps> = ({
         setShowMentionDropdown(false);
       }
     }
-  };
+  }, [profiles]);
 
-  const handleMentionSelect = (profile: any) => {
-    const textarea = document.querySelector('textarea') as HTMLTextAreaElement;
+  const handleMentionSelect = useCallback((profile: any) => {
+    const textarea = document.querySelector(`[data-note-id="${note.id}"]`) as HTMLTextAreaElement;
     if (textarea) {
       const cursorPos = textarea.selectionStart;
       const textBeforeCursor = content.substring(0, cursorPos);
@@ -88,11 +88,17 @@ export const NoteCard: React.FC<NoteCardProps> = ({
 
         setContent(newContent);
         setShowMentionDropdown(false);
+
+        setTimeout(() => {
+          const newCursorPos = mentionStart + profile.name.length + 2;
+          textarea.setSelectionRange(newCursorPos, newCursorPos);
+          textarea.focus();
+        }, 0);
       }
     }
-  };
+  }, [content, note.id]);
 
-  const renderContentWithMentions = (text: string) => {
+  const renderContentWithMentions = useCallback((text: string) => {
     if (!parseMentions || !profiles.length) return text;
     
     const { mentionedUserIds } = parseMentions(text);
@@ -109,7 +115,7 @@ export const NoteCard: React.FC<NoteCardProps> = ({
     });
     
     return <div dangerouslySetInnerHTML={{ __html: formattedText }} />;
-  };
+  }, [parseMentions, profiles]);
 
   const handleSave = async () => {
     if (title.trim() !== note.title || content.trim() !== note.content) {
@@ -125,6 +131,7 @@ export const NoteCard: React.FC<NoteCardProps> = ({
     setTitle(note.title);
     setContent(note.content);
     setIsEditing(false);
+    setShowMentionDropdown(false);
   };
 
   const formatDate = (date: Date) => {
@@ -139,7 +146,7 @@ export const NoteCard: React.FC<NoteCardProps> = ({
     <div
       ref={setNodeRef}
       style={style}
-      className={`bg-card border border-border rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow cursor-pointer group ${
+      className={`bg-card border border-border rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow cursor-pointer group relative ${
         isDragging ? 'rotate-3 shadow-xl' : ''
       }`}
       {...attributes}
@@ -156,12 +163,13 @@ export const NoteCard: React.FC<NoteCardProps> = ({
             autoFocus
           />
           <textarea
+            data-note-id={note.id}
             value={content}
             onChange={handleContentChange}
             className="w-full px-2 py-1 text-sm bg-background border border-border rounded resize-none focus:outline-none focus:ring-2 focus:ring-primary"
-            placeholder="Contenuto della nota..."
+            placeholder="Contenuto della nota... (usa @ per menzionare)"
             rows={3}
-            />
+          />
           <div className="flex justify-end gap-2">
             <Button size="sm" variant="outline" onClick={handleCancel}>
               Annulla
