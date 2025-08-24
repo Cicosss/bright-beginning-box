@@ -10,7 +10,7 @@ import AuthPage from './components/AuthPage';
 import CollapsibleChat from './components/CollapsibleChat';
 import { ChatMessagesProvider } from './contexts/ChatMessagesContext';
 import { KanbanView } from './components/KanbanView';
-import TodoList from './components/TodoList';
+import TodoListView from './components/TodoList';
 
 declare const google: any;
 
@@ -454,7 +454,7 @@ export default function App() {
           />
         );
       case 'todo':
-        return <TodoList onTaskClick={setSelectedTask} />;
+        return <TodoListView onTaskClick={setSelectedTask} />;
       case 'calendar':
         return <CalendarView />;
       case 'gmail':
