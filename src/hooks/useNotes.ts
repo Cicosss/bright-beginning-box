@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../integrations/supabase/client';
 import { Note } from '../types';
 
@@ -6,7 +6,7 @@ export const useNotes = () => {
   const [notes, setNotes] = useState<Note[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const fetchNotes = async () => {
+  const fetchNotes = useCallback(async () => {
     try {
       const { data, error } = await supabase
         .from('notes')
@@ -29,9 +29,9 @@ export const useNotes = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  const createNote = async (note: Omit<Note, 'id' | 'lastModified'>) => {
+  const createNote = useCallback(async (note: Omit<Note, 'id' | 'lastModified'>) => {
     try {
       const { data, error } = await supabase
         .from('notes')
@@ -62,9 +62,9 @@ export const useNotes = () => {
       console.error('Errore nella creazione nota:', error);
       throw error;
     }
-  };
+  }, []);
 
-  const updateNote = async (noteId: string, updates: Partial<Note>) => {
+  const updateNote = useCallback(async (noteId: string, updates: Partial<Note>) => {
     try {
       const { error } = await supabase
         .from('notes')
@@ -87,7 +87,7 @@ export const useNotes = () => {
     } catch (error) {
       console.error('Errore nell\'aggiornamento nota:', error);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchNotes();

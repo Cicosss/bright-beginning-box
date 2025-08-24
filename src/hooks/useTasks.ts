@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../integrations/supabase/client';
 import { Task, Priority } from '../types';
 
@@ -6,7 +6,7 @@ export const useTasks = () => {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const fetchTasks = async () => {
+  const fetchTasks = useCallback(async () => {
     try {
       const { data: tasksData, error } = await supabase
         .from('tasks')
@@ -44,9 +44,9 @@ export const useTasks = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  const updateTask = async (taskId: string, updates: Partial<Task>) => {
+  const updateTask = useCallback(async (taskId: string, updates: Partial<Task>) => {
     try {
       const { error } = await supabase
         .from('tasks')
@@ -68,7 +68,7 @@ export const useTasks = () => {
     } catch (error) {
       console.error('Errore nell\'aggiornamento task:', error);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchTasks();

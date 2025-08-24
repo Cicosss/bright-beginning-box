@@ -515,17 +515,17 @@ export default function App() {
     localStorage.setItem('theme', theme);
   }, [theme]);
 
-  const toggleTheme = () => {
+  const toggleTheme = useCallback(() => {
     setTheme(prev => prev === 'dark' ? 'light' : 'dark');
-  };
+  }, []);
 
-  const handleSignOut = async () => {
+  const handleSignOut = useCallback(async () => {
     await signOut();
-  };
+  }, [signOut]);
 
-  const handleSearch = (query: string) => {
+  const handleSearch = useCallback((query: string) => {
     console.log('Search:', query);
-  };
+  }, []);
 
   const renderView = () => {
     switch (activeView) {

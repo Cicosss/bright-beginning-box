@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../integrations/supabase/client';
 import { Shipment, KanbanColumnID, Priority } from '../types';
 
@@ -6,7 +6,7 @@ export const useShipments = () => {
   const [shipments, setShipments] = useState<Shipment[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const fetchShipments = async () => {
+  const fetchShipments = useCallback(async () => {
     try {
       const { data: shipmentsData, error: shipmentsError } = await supabase
         .from('shipments')
@@ -66,9 +66,9 @@ export const useShipments = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  const updateShipmentStatus = async (shipmentId: string, newStatus: KanbanColumnID) => {
+  const updateShipmentStatus = useCallback(async (shipmentId: string, newStatus: KanbanColumnID) => {
     try {
       const { error } = await supabase
         .from('shipments')
@@ -83,7 +83,7 @@ export const useShipments = () => {
     } catch (error) {
       console.error('Errore nell\'aggiornamento stato spedizione:', error);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchShipments();
