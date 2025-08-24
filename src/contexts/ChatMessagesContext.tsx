@@ -26,11 +26,11 @@ interface ChatMessagesContextType {
   parseMentions: (content: string) => { content: string; mentionedUserIds: string[] };
 }
 
-const ChatMessagesContext = createContext<ChatMessagesContextType | undefined>(undefined);
+const ChatMessagesContext = createContext<ChatMessagesContextType | null>(null);
 
 export const useChatMessagesContext = () => {
   const context = useContext(ChatMessagesContext);
-  if (!context) {
+  if (context === null) {
     throw new Error('useChatMessagesContext must be used within ChatMessagesProvider');
   }
   return context;
@@ -43,8 +43,17 @@ interface ChatMessagesProviderProps {
 export const ChatMessagesProvider: React.FC<ChatMessagesProviderProps> = ({ children }) => {
   const chatData = useChatMessages();
 
+  // Ensure we always provide a valid context value
+  const contextValue: ChatMessagesContextType = {
+    messages: chatData.messages || [],
+    profiles: chatData.profiles || [],
+    loading: chatData.loading || false,
+    sendMessage: chatData.sendMessage,
+    parseMentions: chatData.parseMentions
+  };
+
   return (
-    <ChatMessagesContext.Provider value={chatData}>
+    <ChatMessagesContext.Provider value={contextValue}>
       {children}
     </ChatMessagesContext.Provider>
   );
