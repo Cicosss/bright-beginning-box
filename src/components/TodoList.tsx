@@ -6,6 +6,7 @@ import { useTasks } from '../hooks/useTasks';
 import { useAuth } from '../hooks/useAuth';
 import { Task, Priority } from '../types';
 import { supabase } from '../integrations/supabase/client';
+import TaskCardWithMentions from './TaskCardWithMentions';
 
 interface TodoListProps {
   onTaskClick?: (task: Task) => void;
@@ -259,118 +260,21 @@ const TodoList: React.FC<TodoListProps> = ({ onTaskClick }) => {
                 </h3>
                 
                  <div className="space-y-2">
-                   {(categoryTasks as Task[]).map((task) => {
-                    const priorityConfig = getPriorityConfig(task.priority);
-                    const isOverdue = !task.completed && task.dueDate && new Date(task.dueDate) < new Date();
-                    
-                    return (
-                      <div
-                        key={task.id}
-                        className={`
-                          p-4 border border-border rounded-lg transition-all duration-200 
-                          ${task.completed ? 'bg-muted/50 opacity-75' : 'bg-background hover:shadow-md'}
-                          ${isOverdue ? 'border-red-200 bg-red-50/50' : ''}
-                        `}
-                      >
-                        <div className="flex items-start gap-3">
-                          <button
-                            onClick={() => handleToggleTask(task)}
-                            className="mt-1 text-primary hover:text-primary/80"
-                          >
-                            {task.completed ? (
-                              <CheckCircle2 className="w-5 h-5" />
-                            ) : (
-                              <Circle className="w-5 h-5" />
-                            )}
-                          </button>
-                          
-                          <div className="flex-1 min-w-0">
-                            {editingTask === task.id ? (
-                              <div className="flex gap-2">
-                                <input
-                                  type="text"
-                                  value={editTitle}
-                                  onChange={(e) => setEditTitle(e.target.value)}
-                                  className="flex-1 px-2 py-1 border border-border rounded bg-white text-black focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                                  onKeyDown={(e) => {
-                                    if (e.key === 'Enter') handleEditTask(task.id, editTitle);
-                                    if (e.key === 'Escape') cancelEditing();
-                                  }}
-                                  autoFocus
-                                />
-                                <Button
-                                  size="sm"
-                                  variant="ghost"
-                                  onClick={() => handleEditTask(task.id, editTitle)}
-                                >
-                                  <Save className="w-4 h-4" />
-                                </Button>
-                                <Button
-                                  size="sm"
-                                  variant="ghost"
-                                  onClick={cancelEditing}
-                                >
-                                  <X className="w-4 h-4" />
-                                </Button>
-                              </div>
-                            ) : (
-                              <>
-                                <div className="flex items-center gap-2 mb-2">
-                                  <h4 className={`font-medium ${task.completed ? 'line-through text-muted-foreground' : ''}`}>
-                                    {task.title}
-                                  </h4>
-                                  <span className={`text-xs px-2 py-1 rounded-full ${priorityConfig.color}`}>
-                                    {priorityConfig.icon} {priorityConfig.label}
-                                  </span>
-                                </div>
-                                
-                                <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                                  <div className="flex items-center gap-1">
-                                    <User className="w-4 h-4" />
-                                    <span>{task.assignedTo.name}</span>
-                                  </div>
-                                  
-                                  {task.dueDate && (
-                                    <div className={`flex items-center gap-1 ${isOverdue ? 'text-red-600' : ''}`}>
-                                      <Calendar className="w-4 h-4" />
-                                      <span>{formatDate(task.dueDate)}</span>
-                                    </div>
-                                  )}
-                                  
-                  {task.subTasks && Array.isArray(task.subTasks) && task.subTasks.length > 0 && (
-                    <span>
-                      {task.subTasks.filter(st => st.completed).length}/{task.subTasks.length} subtask
-                    </span>
-                  )}
-                                </div>
-                              </>
-                            )}
-                          </div>
-                          
-                          {editingTask !== task.id && (
-                            <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                onClick={() => startEditing(task)}
-                              >
-                                <Edit2 className="w-4 h-4" />
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                onClick={() => handleDeleteTask(task.id)}
-                                className="text-red-600 hover:text-red-700"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </Button>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
+                   {(categoryTasks as Task[]).map((task) => (
+                     <TaskCardWithMentions
+                       key={task.id}
+                       task={task}
+                       onToggleTask={handleToggleTask}
+                       onEditTask={handleEditTask}
+                       onDeleteTask={handleDeleteTask}
+                       editingTask={editingTask}
+                       editTitle={editTitle}
+                       setEditTitle={setEditTitle}
+                       startEditing={startEditing}
+                       cancelEditing={cancelEditing}
+                     />
+                   ))}
+                 </div>
               </div>
             ))}
           </div>

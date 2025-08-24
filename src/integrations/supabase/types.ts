@@ -528,6 +528,27 @@ export type Database = {
           },
         ]
       }
+      task_mentions: {
+        Row: {
+          created_at: string
+          id: string
+          mentioned_user_id: string
+          task_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          mentioned_user_id: string
+          task_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          mentioned_user_id?: string
+          task_id?: string
+        }
+        Relationships: []
+      }
       tasks: {
         Row: {
           assigned_to: string | null
@@ -598,7 +619,15 @@ export type Database = {
         Args: { note_id: string }
         Returns: undefined
       }
+      delete_task_mentions: {
+        Args: { task_id: string }
+        Returns: undefined
+      }
       insert_note_mentions: {
+        Args: { mentions_data: Json }
+        Returns: undefined
+      }
+      insert_task_mentions: {
         Args: { mentions_data: Json }
         Returns: undefined
       }
