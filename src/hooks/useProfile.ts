@@ -7,12 +7,40 @@ interface Profile {
   id: string;
   name: string;
   avatar_url?: string;
+  role?: string;
 }
 
 export const useProfile = () => {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
+
+  const updateProfile = async (updates: Partial<Profile>) => {
+    if (!user?.id) return;
+
+    try {
+      // Ensure name is always provided for database constraints
+      const profileData = {
+        id: user.id,
+        name: updates.name || profile?.name || user.user_metadata?.name || user.email?.split('@')[0] || 'Utente',
+        ...updates
+      };
+
+      const { data, error } = await supabase
+        .from('profiles')
+        .upsert(profileData)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      setProfile(data);
+      return data;
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      throw error;
+    }
+  };
 
   useEffect(() => {
     if (!user?.id) {
@@ -57,6 +85,7 @@ export const useProfile = () => {
 
   return {
     profile,
-    loading
+    loading,
+    updateProfile
   };
 };

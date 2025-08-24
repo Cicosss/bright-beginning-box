@@ -17,6 +17,7 @@ import { KanbanView } from './components/KanbanView';
 import TodoListView from './components/TodoList';
 import CalendarView from './components/CalendarView';
 import { NotesView } from './components/NotesView';
+import { ProfileSettingsModal } from './components/ProfileSettingsModal';
 
 declare const google: any;
 
@@ -60,7 +61,7 @@ const Sidebar = ({
   onSignOut: () => void,
   unreadNotifications?: number,
   onMarkNotificationsRead?: () => void,
-  profile?: { id: string; name: string; avatar_url?: string } | null,
+  profile?: { id: string; name: string; avatar_url?: string; role?: string } | null,
   profileLoading?: boolean
 }) => {
   const menuItems = [
@@ -118,12 +119,14 @@ const Sidebar = ({
             alt={profile?.name || 'User'} 
             className="w-10 h-10 rounded-full border-2 border-primary/20" 
           />
-          <div>
-            <p className="font-semibold">
-              {profileLoading ? 'Caricamento...' : (profile?.name || 'Utente')}
-            </p>
-            <p className="text-sm text-gray-500 dark:text-gray-400">Utente</p>
-          </div>
+            <div>
+              <p className="font-semibold">
+                {profileLoading ? 'Caricamento...' : (profile?.name || 'Utente')}
+              </p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                {profile?.role || 'Dipendente'}
+              </p>
+            </div>
         </div>
         <button 
           onClick={onSignOut}
@@ -138,7 +141,19 @@ const Sidebar = ({
 };
 
 // --- HEADER Component ---
-const Header = ({ title, theme, onToggleTheme, onSearch }: { title: string, theme: string, onToggleTheme: () => void, onSearch: (query: string) => void }) => {
+const Header = ({ 
+  title, 
+  theme, 
+  onToggleTheme, 
+  onSearch, 
+  onOpenSettings 
+}: { 
+  title: string, 
+  theme: string, 
+  onToggleTheme: () => void, 
+  onSearch: (query: string) => void,
+  onOpenSettings: () => void
+}) => {
   const [inputValue, setInputValue] = useState('');
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -166,7 +181,10 @@ const Header = ({ title, theme, onToggleTheme, onSearch }: { title: string, them
         <button className="p-2 w-10 h-10 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700">
           <Icon name="fa-bell" />
         </button>
-        <button className="p-2 w-10 h-10 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700">
+        <button 
+          onClick={onOpenSettings}
+          className="p-2 w-10 h-10 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700"
+        >
           <Icon name="fa-cog" />
         </button>
       </div>
@@ -392,6 +410,7 @@ export default function App() {
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [selectedNote, setSelectedNote] = useState<Note | null>(null);
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
+  const [isProfileSettingsOpen, setIsProfileSettingsOpen] = useState(false);
 
   // Theme management
   useEffect(() => {
@@ -508,6 +527,7 @@ export default function App() {
             theme={theme}
             onToggleTheme={toggleTheme}
             onSearch={handleSearch}
+            onOpenSettings={() => setIsProfileSettingsOpen(true)}
           />
           
           <div className="flex-grow flex flex-col overflow-hidden">
@@ -526,6 +546,11 @@ export default function App() {
         <ShipmentModal 
           shipment={selectedShipment}
           onClose={() => setSelectedShipment(null)}
+        />
+        
+        <ProfileSettingsModal
+          isOpen={isProfileSettingsOpen}
+          onClose={() => setIsProfileSettingsOpen(false)}
         />
       </div>
     </ChatMessagesProvider>
