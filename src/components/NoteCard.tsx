@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { Note } from '../types';
-import { Calendar, Share2, Edit3, Trash2 } from 'lucide-react';
+import { Calendar, Share2, Edit3 } from 'lucide-react';
 import { Button } from './ui/button';
 
 type NoteCardProps = {

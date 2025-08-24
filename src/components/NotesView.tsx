@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { DndContext, DragEndEvent, DragOverlay, DragStartEvent, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
-import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { useNotes } from '../hooks/useNotes';
 import { useAuth } from '../hooks/useAuth';
 import { Note } from '../types';
@@ -8,7 +7,7 @@ import { NoteCard } from './NoteCard';
 import { NoteColumn } from './NoteColumn';
 import { AddNoteModal } from './AddNoteModal';
 import { Button } from './ui/button';
-import { Plus, Filter } from 'lucide-react';
+import { Plus } from 'lucide-react';
 
 interface NotesViewProps {
   onNoteClick?: (note: Note) => void;
@@ -26,9 +25,7 @@ export function NotesView({ onNoteClick }: NotesViewProps) {
   const { user } = useAuth();
   const [activeNote, setActiveNote] = useState<Note | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
-  const [selectedColumn, setSelectedColumn] = useState<string>('');
   const [searchTerm, setSearchTerm] = useState('');
-  const [showFilters, setShowFilters] = useState(false);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -132,13 +129,6 @@ export function NotesView({ onNoteClick }: NotesViewProps) {
               className="px-3 py-2 border border-border rounded-md bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
             />
           </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setShowFilters(!showFilters)}
-          >
-            <Filter className="w-4 h-4" />
-          </Button>
           <Button
             onClick={() => setShowAddModal(true)}
             className="flex items-center gap-2"
