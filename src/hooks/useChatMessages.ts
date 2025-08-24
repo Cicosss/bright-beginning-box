@@ -42,22 +42,15 @@ export const useChatMessages = () => {
     try {
       setLoading(true);
       
-      // Fetch messages and senders in parallel  
-      const [messagesResponse, allProfilesResponse] = await Promise.all([
-        supabase
-          .from('messages')
-          .select('*')
-          .order('created_at', { ascending: true }),
-        supabase
-          .from('profiles')
-          .select('id, name, avatar_url')
-      ]);
+      // Fetch messages only
+      const { data: messagesData, error: messagesError } = await supabase
+        .from('messages')
+        .select('*')
+        .order('created_at', { ascending: true });
 
-      if (messagesResponse.error) throw messagesResponse.error;
-      if (allProfilesResponse.error) throw allProfilesResponse.error;
+      if (messagesError) throw messagesError;
 
-      const messagesData = messagesResponse.data || [];
-      const allProfiles = allProfilesResponse.data || [];
+      const allProfiles = profiles;
 
       // Batch fetch all mentions for all messages in one query
       const messageIds = messagesData.map(m => m.id);
@@ -97,7 +90,7 @@ export const useChatMessages = () => {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [profiles]);
 
   // Send a new message with optimistic update
   const sendMessage = useCallback(async (content: string, mentionedUsers: string[] = []) => {
