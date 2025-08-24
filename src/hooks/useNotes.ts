@@ -22,7 +22,7 @@ export const useNotes = () => {
         title: n.title,
         content: n.content || '',
         notebook: n.notebook || 'Generale',
-        isShared: n.is_shared || false,
+        isShared: true, // All notes are now shared
         lastModified: new Date(n.updated_at),
         createdBy: n.created_by,
         lastModifiedBy: n.last_modified_by,
@@ -45,7 +45,6 @@ export const useNotes = () => {
           title: note.title,
           content: note.content,
           notebook: note.notebook,
-          is_shared: note.isShared,
           created_by: (await supabase.auth.getUser()).data.user?.id
         }])
         .select()
@@ -58,7 +57,7 @@ export const useNotes = () => {
         title: data.title,
         content: data.content || '',
         notebook: data.notebook || 'Generale',
-        isShared: data.is_shared || false,
+        isShared: true, // All notes are now shared
         lastModified: new Date(data.updated_at)
       };
 
@@ -78,7 +77,6 @@ export const useNotes = () => {
           title: updates.title,
           content: updates.content,
           notebook: updates.notebook,
-          is_shared: updates.isShared,
           last_modified_by: updates.lastModifiedBy
         })
         .eq('id', noteId);

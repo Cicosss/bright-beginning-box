@@ -22,7 +22,6 @@ export function AddNoteModalWithMentions({ isOpen, onClose, onSave, columns }: A
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [notebook, setNotebook] = useState(columns[0]?.title || 'Idee');
-  const [isShared, setIsShared] = useState(false);
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [showMentionDropdown, setShowMentionDropdown] = useState(false);
   const [mentionSearchQuery, setMentionSearchQuery] = useState('');
@@ -103,14 +102,13 @@ export function AddNoteModalWithMentions({ isOpen, onClose, onSave, columns }: A
       title: title.trim(),
       content: content.trim(),
       notebook,
-      isShared,
+      isShared: true, // Always shared now
     });
 
     // Reset form
     setTitle('');
     setContent('');
     setNotebook(columns[0]?.title || 'Idee');
-    setIsShared(false);
     setShowMentionDropdown(false);
   };
 
@@ -118,7 +116,6 @@ export function AddNoteModalWithMentions({ isOpen, onClose, onSave, columns }: A
     setTitle('');
     setContent('');
     setNotebook(columns[0]?.title || 'Idee');
-    setIsShared(false);
     setShowMentionDropdown(false);
     onClose();
   };
@@ -203,17 +200,8 @@ export function AddNoteModalWithMentions({ isOpen, onClose, onSave, columns }: A
             </select>
           </div>
 
-          <div className="flex items-center gap-2">
-            <input
-              id="isShared"
-              type="checkbox"
-              checked={isShared}
-              onChange={(e) => setIsShared(e.target.checked)}
-              className="w-4 h-4 text-blue-500 bg-white border-gray-600 rounded focus:ring-blue-500 focus:ring-2"
-            />
-            <label htmlFor="isShared" className="text-sm text-white">
-              Condividi con il team
-            </label>
+          <div className="text-sm text-white/70 italic">
+            Tutte le note sono automaticamente condivise con il team
           </div>
 
           <div className="flex justify-end gap-2 pt-4">

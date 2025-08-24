@@ -14,7 +14,6 @@ export function AddNoteModal({ isOpen, onClose, onSave, columns }: AddNoteModalP
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [notebook, setNotebook] = useState(columns[0]?.title || 'Idee');
-  const [isShared, setIsShared] = useState(false);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -24,21 +23,19 @@ export function AddNoteModal({ isOpen, onClose, onSave, columns }: AddNoteModalP
       title: title.trim(),
       content: content.trim(),
       notebook,
-      isShared,
+      isShared: true, // Always shared now
     });
 
     // Reset form
     setTitle('');
     setContent('');
     setNotebook(columns[0]?.title || 'Idee');
-    setIsShared(false);
   };
 
   const handleClose = () => {
     setTitle('');
     setContent('');
     setNotebook(columns[0]?.title || 'Idee');
-    setIsShared(false);
     onClose();
   };
 
@@ -111,17 +108,8 @@ export function AddNoteModal({ isOpen, onClose, onSave, columns }: AddNoteModalP
             </select>
           </div>
 
-          <div className="flex items-center gap-2">
-            <input
-              id="isShared"
-              type="checkbox"
-              checked={isShared}
-              onChange={(e) => setIsShared(e.target.checked)}
-              className="w-4 h-4 text-primary bg-background border-border rounded focus:ring-primary focus:ring-2"
-            />
-            <label htmlFor="isShared" className="text-sm text-foreground">
-              Condividi con il team
-            </label>
+          <div className="text-sm text-muted-foreground italic">
+            Tutte le note sono automaticamente condivise con il team
           </div>
 
           <div className="flex justify-end gap-2 pt-4">

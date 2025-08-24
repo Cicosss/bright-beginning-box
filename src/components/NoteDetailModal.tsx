@@ -35,7 +35,6 @@ const NoteDetailModal: React.FC<NoteDetailModalProps> = ({
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [notebook, setNotebook] = useState('');
-  const [isShared, setIsShared] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [showMentionDropdown, setShowMentionDropdown] = useState(false);
@@ -50,7 +49,6 @@ const NoteDetailModal: React.FC<NoteDetailModalProps> = ({
       setTitle(note.title);
       setContent(note.content);
       setNotebook(note.notebook);
-      setIsShared(note.isShared);
     }
   }, [note]);
 
@@ -135,7 +133,7 @@ const NoteDetailModal: React.FC<NoteDetailModalProps> = ({
         title: title.trim(),
         content: content.trim(),
         notebook,
-        isShared,
+        isShared: true, // Always shared now
         lastModifiedBy: user?.id,
         lastModifiedAt: new Date()
       });
@@ -330,16 +328,8 @@ const NoteDetailModal: React.FC<NoteDetailModalProps> = ({
                   </select>
                 </div>
 
-                <div className="flex items-end">
-                  <label className="flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      checked={isShared}
-                      onChange={(e) => setIsShared(e.target.checked)}
-                      className="w-4 h-4 text-primary bg-white border-gray-300 rounded focus:ring-primary focus:ring-2"
-                    />
-                    <span className="text-sm text-gray-700">Condividi con il team</span>
-                  </label>
+                <div className="text-sm text-gray-600 italic">
+                  Tutte le note sono automaticamente condivise con il team
                 </div>
               </div>
 
@@ -363,12 +353,6 @@ const NoteDetailModal: React.FC<NoteDetailModalProps> = ({
                     <Calendar className="w-4 h-4" />
                     <span>Creata: {formatRomeDateTime(note.lastModified)}</span>
                   </div>
-                  {note.isShared && (
-                    <div className="flex items-center gap-1">
-                      <Share2 className="w-4 h-4" />
-                      <span>Condivisa</span>
-                    </div>
-                  )}
                 </div>
               </div>
 
