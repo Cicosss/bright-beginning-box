@@ -7,6 +7,7 @@ import { useNotes } from './hooks/useNotes';
 import { useCalendarEvents } from './hooks/useCalendarEvents';
 import { useNotificationsBadge } from './hooks/useNotificationsBadge';
 import { useProfile } from './hooks/useProfile';
+import { generateAvatarUrl } from './utils/avatarGenerator';
 import { Shipment, Task, Priority, KanbanColumnID, CalendarEvent, Email, Note } from './types';
 import { USERS } from './constants';
 import AuthPage from './components/AuthPage';
@@ -113,9 +114,9 @@ const Sidebar = ({
       <div className="p-4 border-t border-gray-200 dark:border-gray-700">
         <div className="flex items-center space-x-3 mb-3">
           <img 
-            src={profile?.avatar_url || 'https://picsum.photos/100/100'} 
+            src={profile?.avatar_url || generateAvatarUrl('avataaars', profile?.name || 'Guest')} 
             alt={profile?.name || 'User'} 
-            className="w-10 h-10 rounded-full" 
+            className="w-10 h-10 rounded-full border-2 border-primary/20" 
           />
           <div>
             <p className="font-semibold">

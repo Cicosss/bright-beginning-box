@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from './useAuth';
 import { supabase } from '../integrations/supabase/client';
+import { generateAvatarUrl } from '../utils/avatarGenerator';
 
 interface Profile {
   id: string;
@@ -36,11 +37,11 @@ export const useProfile = () => {
         if (data) {
           setProfile(data);
         } else {
-          // If no profile exists, use user metadata as fallback
+          // If no profile exists, use user metadata as fallback with avatar
           const fallbackProfile = {
             id: user.id,
             name: user.user_metadata?.name || user.email?.split('@')[0] || 'Utente',
-            avatar_url: user.user_metadata?.avatar_url
+            avatar_url: user.user_metadata?.avatar_url || generateAvatarUrl('avataaars', user.user_metadata?.name || user.email?.split('@')[0] || 'Guest')
           };
           setProfile(fallbackProfile);
         }
