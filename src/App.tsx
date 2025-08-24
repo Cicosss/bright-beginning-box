@@ -499,21 +499,26 @@ export default function App() {
   // Mock events for now
   const events = useMemo<CalendarEvent[]>(() => [], []);
 
-  // Show loading screen during auth check
-  if (authLoading || shipmentsLoading || tasksLoading || notesLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-primary">
-          <i className="fas fa-spinner animate-spin text-3xl"></i>
-        </div>
-      </div>
-    );
-  }
+  // Compute loading/auth gate without early-returning before hooks
+  const isLoading = useMemo(() => (
+    authLoading || shipmentsLoading || tasksLoading || notesLoading
+  ), [authLoading, shipmentsLoading, tasksLoading, notesLoading]);
 
-  // Show auth page if not authenticated  
-  if (!user) {
-    return <AuthPage />;
-  }
+  const gatedView = useMemo(() => {
+    if (isLoading) {
+      return (
+        <div className="min-h-screen flex items-center justify-center">
+          <div className="text-primary">
+            <i className="fas fa-spinner animate-spin text-3xl"></i>
+          </div>
+        </div>
+      );
+    }
+    if (!user) {
+      return <AuthPage />;
+    }
+    return null;
+  }, [isLoading, user]);
 
 
   const toggleTheme = useCallback(() => {
@@ -575,6 +580,8 @@ export default function App() {
       default: return 'Dashboard';
     }
   };
+
+  if (gatedView) return gatedView;
 
   return (
     <div className="flex h-screen bg-gray-100 dark:bg-gray-900">
