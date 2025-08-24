@@ -490,6 +490,12 @@ export default function App() {
   const [selectedNote, setSelectedNote] = useState<Note | null>(null);
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
 
+  // Theme management
+  useEffect(() => {
+    document.documentElement.classList.toggle('dark', theme === 'dark');
+    localStorage.setItem('theme', theme);
+  }, [theme]);
+
   // Mock events for now
   const events = useMemo<CalendarEvent[]>(() => [], []);
 
@@ -509,11 +515,6 @@ export default function App() {
     return <AuthPage />;
   }
 
-  // Theme management
-  useEffect(() => {
-    document.documentElement.classList.toggle('dark', theme === 'dark');
-    localStorage.setItem('theme', theme);
-  }, [theme]);
 
   const toggleTheme = useCallback(() => {
     setTheme(prev => prev === 'dark' ? 'light' : 'dark');
