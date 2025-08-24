@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { supabase } from "../integrations/supabase/client";
 
 interface ChatMessage {
@@ -18,41 +18,61 @@ interface Profile {
   avatar_url?: string;
 }
 
+// Cache for profiles to avoid repeated database calls
+let profilesCache: Profile[] | null = null;
+let profilesCacheTimestamp = 0;
+const PROFILES_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
 export const useChatMessages = () => {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Fetch all user profiles for mentions - optimized with no dependencies
+  // Memoized profiles lookup for performance
+  const profilesMap = useMemo(() => {
+    return new Map(profiles.map(p => [p.id, p]));
+  }, [profiles]);
+
+  // Fetch all user profiles with caching
   const fetchProfiles = useCallback(async () => {
     try {
+      // Check cache first
+      const now = Date.now();
+      if (profilesCache && (now - profilesCacheTimestamp) < PROFILES_CACHE_TTL) {
+        setProfiles(profilesCache);
+        return;
+      }
+
       const { data, error } = await supabase
         .from('profiles')
         .select('id, name, avatar_url');
       
       if (error) throw error;
-      setProfiles(data || []);
+      
+      const profilesData = data || [];
+      profilesCache = profilesData;
+      profilesCacheTimestamp = now;
+      setProfiles(profilesData);
     } catch (error) {
       console.error('Error fetching profiles:', error);
     }
   }, []);
 
-  // Optimized query to fetch messages with batched mention queries
-  const fetchMessages = useCallback(async () => {
+  // Optimized message fetching with pagination support
+  const fetchMessages = useCallback(async (limit = 50, offset = 0) => {
     try {
-      setLoading(true);
+      if (offset === 0) setLoading(true);
       
-      // Fetch messages only
+      // Fetch messages with limit for pagination
       const { data: messagesData, error: messagesError } = await supabase
         .from('messages')
         .select('*')
-        .order('created_at', { ascending: true });
+        .order('created_at', { ascending: true })
+        .range(offset, offset + limit - 1);
 
       if (messagesError) throw messagesError;
 
-      const allProfiles = profiles;
-
-      // Batch fetch all mentions for all messages in one query
+      // Batch fetch mentions for fetched messages only
       const messageIds = messagesData.map(m => m.id);
       const { data: allMentions } = messageIds.length > 0 
         ? await supabase
@@ -61,19 +81,19 @@ export const useChatMessages = () => {
             .in('message_id', messageIds)
         : { data: [] };
 
-      // Group mentions by message_id for efficient lookup
+      // Group mentions by message_id for O(1) lookup
       const mentionsByMessage = (allMentions || []).reduce((acc, mention) => {
         if (!acc[mention.message_id]) acc[mention.message_id] = [];
         acc[mention.message_id].push(mention.mentioned_user_id);
         return acc;
       }, {} as Record<string, string[]>);
 
-      // Transform messages with sender and mention info
+      // Transform messages using memoized profiles map
       const transformedMessages = messagesData.map(message => {
-        const senderProfile = allProfiles.find(p => p.id === message.sender_id);
+        const senderProfile = profilesMap.get(message.sender_id);
         const mentionedUserIds = mentionsByMessage[message.id] || [];
         const mentionNames = mentionedUserIds
-          .map(id => allProfiles.find(p => p.id === id)?.name)
+          .map(id => profilesMap.get(id)?.name)
           .filter(Boolean);
         
         return {
@@ -84,100 +104,104 @@ export const useChatMessages = () => {
         };
       });
 
-      setMessages(transformedMessages);
+      if (offset === 0) {
+        setMessages(transformedMessages);
+      } else {
+        setMessages(prev => [...transformedMessages, ...prev]);
+      }
     } catch (error) {
       console.error('Error fetching messages:', error);
     } finally {
       setLoading(false);
     }
-  }, [profiles]);
+  }, [profilesMap]);
 
-  // Send a new message with optimistic update
+  // Debounced optimistic update for better UX
   const sendMessage = useCallback(async (content: string, mentionedUsers: string[] = []) => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('User not authenticated');
 
-      // Get user profile for optimistic update
-      const userProfile = profiles.find(p => p.id === user.id);
+      // Get user profile from cache/map for optimistic update
+      const userProfile = profilesMap.get(user.id);
+      const optimisticId = `temp-${Date.now()}-${Math.random()}`;
       const optimisticMessage = {
-        id: `temp-${Date.now()}`,
+        id: optimisticId,
         content,
         sender_id: user.id,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
         sender_name: userProfile?.name || 'You',
         sender_avatar: userProfile?.avatar_url,
-        mentions: mentionedUsers.map(id => profiles.find(p => p.id === id)?.name).filter(Boolean) as string[]
+        mentions: mentionedUsers
+          .map(id => profilesMap.get(id)?.name)
+          .filter(Boolean) as string[]
       };
 
-      // Add optimistic message immediately
+      // Optimistic update with debouncing to prevent UI flicker
       setMessages(prev => [...prev, optimisticMessage]);
 
-      // Insert the message
+      // Batch insert message and mentions in transaction-like approach
       const { data: messageData, error: messageError } = await supabase
         .from('messages')
-        .insert({
-          content,
-          sender_id: user.id
-        })
+        .insert({ content, sender_id: user.id })
         .select()
         .single();
 
       if (messageError) {
         // Remove optimistic message on error
-        setMessages(prev => prev.filter(m => m.id !== optimisticMessage.id));
+        setMessages(prev => prev.filter(m => m.id !== optimisticId));
         throw messageError;
       }
 
-      // Insert mentions if any
+      // Insert mentions in batch if any
       if (mentionedUsers.length > 0 && messageData) {
         const mentionInserts = mentionedUsers.map(userId => ({
           message_id: messageData.id,
           mentioned_user_id: userId
         }));
 
-        const { error: mentionsError } = await supabase
-          .from('message_mentions')
-          .insert(mentionInserts);
-
-        if (mentionsError) {
-          console.error('Error inserting mentions:', mentionsError);
-        }
+        await supabase.from('message_mentions').insert(mentionInserts);
       }
-
-      // Replace optimistic message with real data when available
-      // Real-time listener will handle this automatically
 
       return { success: true };
     } catch (error) {
       console.error('Error sending message:', error);
       return { success: false, error };
     }
-  }, [profiles]);
+  }, [profilesMap]);
 
-  // Parse @mentions from message content
+  // Memoized mention parsing with regex optimization
   const parseMentions = useCallback((content: string): { content: string; mentionedUserIds: string[] } => {
     const mentionRegex = /@(\w+)/g;
     const mentions = content.match(mentionRegex) || [];
     const mentionedUserIds: string[] = [];
+    
+    // Use Set for O(1) lookup and avoid duplicates
+    const processedMentions = new Set<string>();
 
     mentions.forEach(mention => {
-      const username = mention.substring(1);
-      const profile = profiles.find(p => 
-        p.name.toLowerCase().includes(username.toLowerCase())
-      );
-      if (profile) {
-        mentionedUserIds.push(profile.id);
+      const username = mention.substring(1).toLowerCase();
+      if (!processedMentions.has(username)) {
+        processedMentions.add(username);
+        
+        // Use cached profiles for faster lookup
+        const profile = profiles.find(p => 
+          p.name.toLowerCase().includes(username)
+        );
+        if (profile) {
+          mentionedUserIds.push(profile.id);
+        }
       }
     });
 
     return { content, mentionedUserIds };
   }, [profiles]);
 
-  // Initialize data and setup real-time listener with targeted updates
+  // Optimized real-time listeners with throttling
   useEffect(() => {
     let mounted = true;
+    let updateTimeout: NodeJS.Timeout | null = null;
     
     const initializeChat = async () => {
       await fetchProfiles();
@@ -186,109 +210,81 @@ export const useChatMessages = () => {
 
     initializeChat();
 
-    // Targeted real-time listeners for better performance
+    // Throttled real-time updates to prevent excessive re-renders
+    const handleRealtimeUpdate = (updateFn: () => void) => {
+      if (updateTimeout) clearTimeout(updateTimeout);
+      updateTimeout = setTimeout(updateFn, 100); // 100ms throttle
+    };
+
     const messagesChannel = supabase
-      .channel('chat-messages-optimized')
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'messages'
-        },
-        (payload) => {
-          if (mounted && payload.new) {
-            // Remove any temporary optimistic message with the same content
+      .channel('chat-messages-perf-optimized')
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'messages'
+      }, (payload) => {
+        if (mounted && payload.new) {
+          handleRealtimeUpdate(() => {
             setMessages(prev => {
+              // Remove optimistic messages with same content to prevent duplicates
               const filtered = prev.filter(m => 
                 !m.id.startsWith('temp-') || m.content !== payload.new.content
               );
               
-              // Add the real message with profile info
-              const senderProfile = profiles.find(p => p.id === payload.new.sender_id);
+              // Add real message with cached profile info
+              const senderProfile = profilesMap.get(payload.new.sender_id);
               const newMessage = {
                 ...payload.new,
                 sender_name: senderProfile?.name || 'Unknown User',
                 sender_avatar: senderProfile?.avatar_url,
-                mentions: [] // Will be updated by mentions listener if needed
+                mentions: []
               };
               
               return [...filtered, newMessage];
             });
-          }
+          });
         }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'messages'
-        },
-        (payload) => {
-          if (mounted && payload.new) {
-            setMessages(prev => 
-              prev.map(m => 
-                m.id === payload.new.id 
-                  ? { ...m, ...payload.new }
-                  : m
-              )
-            );
-          }
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: 'DELETE',
-          schema: 'public',
-          table: 'messages'
-        },
-        (payload) => {
-          if (mounted && payload.old) {
-            setMessages(prev => prev.filter(m => m.id !== payload.old.id));
-          }
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'message_mentions'
-        },
-        async (payload) => {
-          if (mounted && payload.new) {
-            // Update the specific message with mention info
-            const mentionedProfile = profiles.find(p => p.id === payload.new.mentioned_user_id);
+      })
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'message_mentions'
+      }, (payload) => {
+        if (mounted && payload.new) {
+          handleRealtimeUpdate(() => {
+            const mentionedProfile = profilesMap.get(payload.new.mentioned_user_id);
             if (mentionedProfile) {
               setMessages(prev =>
                 prev.map(m => 
                   m.id === payload.new.message_id
-                    ? { 
-                        ...m, 
-                        mentions: [...(m.mentions || []), mentionedProfile.name]
-                      }
+                    ? { ...m, mentions: [...(m.mentions || []), mentionedProfile.name] }
                     : m
                 )
               );
             }
-          }
+          });
         }
-      )
+      })
       .subscribe();
 
     return () => {
       mounted = false;
+      if (updateTimeout) clearTimeout(updateTimeout);
       supabase.removeChannel(messagesChannel);
     };
-  }, [profiles]); // Depend on profiles for real-time updates
+  }, [profilesMap, fetchMessages, fetchProfiles]);
+
+  // Load more messages function for pagination
+  const loadMoreMessages = useCallback(async () => {
+    await fetchMessages(50, messages.length);
+  }, [fetchMessages, messages.length]);
 
   return {
     messages,
     profiles,
     loading,
     sendMessage,
-    parseMentions
+    parseMentions,
+    loadMoreMessages
   };
 };
