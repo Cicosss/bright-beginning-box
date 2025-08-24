@@ -11,9 +11,11 @@ type NoteColumnProps = {
   notes: Note[];
   onNoteClick: (note: Note) => void;
   onUpdateNote: (noteId: string, updates: Partial<Note>) => Promise<void>;
+  profiles: Array<{ id: string; name: string; avatar_url?: string }>;
+  parseMentions: (content: string) => { content: string; mentionedUserIds: string[] };
 }
 
-export const NoteColumn: React.FC<NoteColumnProps> = ({ id, title, color, notes, onNoteClick, onUpdateNote }) => {
+export const NoteColumn: React.FC<NoteColumnProps> = ({ id, title, color, notes, onNoteClick, onUpdateNote, profiles, parseMentions }) => {
   const { setNodeRef, isOver } = useDroppable({
     id,
   });

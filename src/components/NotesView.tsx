@@ -1,11 +1,13 @@
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { DndContext, DragEndEvent, DragOverlay, DragStartEvent, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { useNotes } from '../hooks/useNotes';
 import { useAuth } from '../hooks/useAuth';
+import { supabase } from '../integrations/supabase/client';
 import { Note } from '../types';
 import { NoteCard } from './NoteCard';
 import { NoteColumn } from './NoteColumn';
 import { AddNoteModal } from './AddNoteModal';
+import UserMentionDropdown from './UserMentionDropdown';
 import { Button } from './ui/button';
 import { Plus } from 'lucide-react';
 
@@ -26,6 +28,22 @@ export function NotesView({ onNoteClick }: NotesViewProps) {
   const [activeNote, setActiveNote] = useState<Note | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [profiles, setProfiles] = useState<any[]>([]);
+
+  // Fetch profiles for mentions
+  useEffect(() => {
+    const fetchProfiles = async () => {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('id, name, avatar_url');
+      
+      if (!error && data) {
+        setProfiles(data);
+      }
+    };
+    
+    fetchProfiles();
+  }, []);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -79,12 +97,90 @@ export function NotesView({ onNoteClick }: NotesViewProps) {
     }
   };
 
+  // Parse mentions utility
+  const parseMentions = useCallback((content: string): { content: string; mentionedUserIds: string[] } => {
+    const mentionRegex = /@(\w+)/g;
+    const mentions = content.match(mentionRegex) || [];
+    const mentionedUserIds: string[] = [];
+    
+    mentions.forEach(mention => {
+      const username = mention.substring(1);
+      mentionedUserIds.push(username);
+    });
+
+    return { content, mentionedUserIds };
+  }, []);
+
   const handleAddNote = async (noteData: Omit<Note, 'id' | 'lastModified'>) => {
     try {
-      await createNote(noteData);
+      // Parse mentions from content
+      const { mentionedUserIds } = parseMentions(noteData.content);
+      
+      // Create note
+      const newNote = await createNote(noteData);
+      
+      // Handle mentions separately
+      if (mentionedUserIds.length > 0 && newNote) {
+        // Get profiles to map names to IDs
+        const matchedProfiles = profiles.filter(profile => 
+          mentionedUserIds.some(name => 
+            profile.name.toLowerCase().includes(name.toLowerCase())
+          )
+        );
+
+        if (matchedProfiles.length > 0) {
+          const mentions = matchedProfiles.map(profile => ({
+            note_id: newNote.id,
+            mentioned_user_id: profile.id
+          }));
+
+          // Insert mentions directly
+          await supabase.rpc('insert_note_mentions', { mentions_data: mentions });
+        }
+      }
+      
       setShowAddModal(false);
     } catch (error) {
       console.error('Errore nella creazione della nota:', error);
+    }
+  };
+
+  const handleUpdateNote = async (noteId: string, updates: Partial<Note>) => {
+    try {
+      // Parse mentions from content if updated
+      let mentionedUserIds: string[] = [];
+      if (updates.content) {
+        const result = parseMentions(updates.content);
+        mentionedUserIds = result.mentionedUserIds;
+      }
+      
+      // Update note
+      await updateNote(noteId, updates);
+      
+      // Handle mentions separately if content was updated
+      if (updates.content && mentionedUserIds.length > 0) {
+        // Get profiles to map names to IDs
+        const matchedProfiles = profiles.filter(profile => 
+          mentionedUserIds.some(name => 
+            profile.name.toLowerCase().includes(name.toLowerCase())
+          )
+        );
+
+        if (matchedProfiles.length > 0) {
+          // Delete existing mentions
+          await supabase.rpc('delete_note_mentions', { note_id: noteId });
+          
+          // Insert new mentions
+          const mentions = matchedProfiles.map(profile => ({
+            note_id: noteId,
+            mentioned_user_id: profile.id
+          }));
+
+          await supabase.rpc('insert_note_mentions', { mentions_data: mentions });
+        }
+      }
+    } catch (error) {
+      console.error('Errore nell\'aggiornamento nota:', error);
     }
   };
 
@@ -155,7 +251,9 @@ export function NotesView({ onNoteClick }: NotesViewProps) {
                 color={column.color}
                 notes={notesByColumn[column.id] || []}
                 onNoteClick={onNoteClick || (() => {})}
-                onUpdateNote={updateNote}
+                onUpdateNote={handleUpdateNote}
+                profiles={profiles}
+                parseMentions={parseMentions}
               />
             ))}
           </div>
