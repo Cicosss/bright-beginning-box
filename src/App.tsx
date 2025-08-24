@@ -13,6 +13,7 @@ import { ChatMessagesProvider } from './contexts/ChatMessagesContext';
 import { KanbanView } from './components/KanbanView';
 import TodoListView from './components/TodoList';
 import CalendarView from './components/CalendarView';
+import { NotesView } from './components/NotesView';
 
 declare const google: any;
 
@@ -327,32 +328,6 @@ const ShipmentModal = ({ shipment, onClose }: { shipment: Shipment | null, onClo
 };
 
 
-// Simple Notes View
-const NotesView = ({ notes, onNoteClick }: { notes: Note[], onNoteClick: (note: Note) => void }) => {
-  return (
-    <div className="p-6">
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md">
-        <div className="p-6">
-          <h3 className="text-xl font-bold mb-4">Note</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {notes.map(note => (
-              <div key={note.id} className="p-4 border rounded-lg hover:shadow-md cursor-pointer" onClick={() => onNoteClick(note)}>
-                <div className="flex items-center space-x-2 mb-2">
-                  <Icon name="fa-note-sticky" className="text-yellow-400" />
-                  <h4 className="font-semibold">{note.title}</h4>
-                </div>
-                <p className="text-sm text-gray-500 mb-2">{note.notebook}</p>
-                <p className="text-sm line-clamp-3">{note.content}</p>
-                <p className="text-xs text-gray-400 mt-2">{note.lastModified.toLocaleDateString()}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
-
 // Simple placeholder views
 const GmailView = () => (
   <div className="p-6">
@@ -454,7 +429,7 @@ export default function App() {
       case 'gmail':
         return <GmailView />;
       case 'notes':
-        return <NotesView notes={notes} onNoteClick={setSelectedNote} />;
+        return <NotesView onNoteClick={setSelectedNote} />;
       default:
         return <div className="p-6">Vista non trovata</div>;
     }
