@@ -6,6 +6,7 @@ import { useTasks } from './hooks/useTasks';
 import { useNotes } from './hooks/useNotes';
 import { useCalendarEvents } from './hooks/useCalendarEvents';
 import { useNotificationsBadge } from './hooks/useNotificationsBadge';
+import { useProfile } from './hooks/useProfile';
 import { Shipment, Task, Priority, KanbanColumnID, CalendarEvent, Email, Note } from './types';
 import { USERS } from './constants';
 import AuthPage from './components/AuthPage';
@@ -49,13 +50,17 @@ const Sidebar = ({
   setActiveView, 
   onSignOut, 
   unreadNotifications = 0, 
-  onMarkNotificationsRead 
+  onMarkNotificationsRead,
+  profile,
+  profileLoading
 }: { 
   activeView: string, 
   setActiveView: (view: string) => void, 
   onSignOut: () => void,
   unreadNotifications?: number,
-  onMarkNotificationsRead?: () => void
+  onMarkNotificationsRead?: () => void,
+  profile?: { id: string; name: string; avatar_url?: string } | null,
+  profileLoading?: boolean
 }) => {
   const menuItems = [
     { id: 'dashboard', name: 'Dashboard', icon: 'fa-table-columns' },
@@ -107,10 +112,16 @@ const Sidebar = ({
       </nav>
       <div className="p-4 border-t border-gray-200 dark:border-gray-700">
         <div className="flex items-center space-x-3 mb-3">
-          <img src={USERS[0].avatarUrl} alt={USERS[0].name} className="w-10 h-10 rounded-full" />
+          <img 
+            src={profile?.avatar_url || 'https://picsum.photos/100/100'} 
+            alt={profile?.name || 'User'} 
+            className="w-10 h-10 rounded-full" 
+          />
           <div>
-            <p className="font-semibold">{USERS[0].name}</p>
-            <p className="text-sm text-gray-500 dark:text-gray-400">Responsabile</p>
+            <p className="font-semibold">
+              {profileLoading ? 'Caricamento...' : (profile?.name || 'Utente')}
+            </p>
+            <p className="text-sm text-gray-500 dark:text-gray-400">Utente</p>
           </div>
         </div>
         <button 
@@ -368,6 +379,7 @@ const GmailView = () => (
 export default function App() {
   const { user, loading: authLoading, signOut } = useAuth();
   const { unreadCount, markAsRead } = useNotificationsBadge();
+  const { profile, loading: profileLoading } = useProfile();
   const { shipments, loading: shipmentsLoading, updateShipmentStatus, createShipment, createCustomer, createProduct } = useShipments();
   const { tasks, loading: tasksLoading } = useTasks();
   const { notes, loading: notesLoading } = useNotes();
@@ -485,6 +497,8 @@ export default function App() {
           onSignOut={handleSignOut}
           unreadNotifications={unreadCount}
           onMarkNotificationsRead={markAsRead}
+          profile={profile}
+          profileLoading={profileLoading}
         />
         
         <div className="flex-grow flex flex-col overflow-hidden">
