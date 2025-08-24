@@ -72,7 +72,40 @@ export const useTasks = () => {
 
   useEffect(() => {
     fetchTasks();
-  }, []);
+
+    // Set up real-time listeners for tasks and sub_tasks
+    const tasksChannel = supabase
+      .channel('tasks-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'tasks'
+        },
+        (payload) => {
+          console.log('Task change:', payload);
+          fetchTasks();
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'sub_tasks'
+        },
+        (payload) => {
+          console.log('Sub-task change:', payload);
+          fetchTasks();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(tasksChannel);
+    };
+  }, [fetchTasks]);
 
   return {
     tasks,

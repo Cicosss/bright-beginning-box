@@ -91,7 +91,28 @@ export const useNotes = () => {
 
   useEffect(() => {
     fetchNotes();
-  }, []);
+
+    // Set up real-time listener for notes
+    const channel = supabase
+      .channel('notes-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'notes'
+        },
+        (payload) => {
+          console.log('Note change:', payload);
+          fetchNotes();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [fetchNotes]);
 
   return {
     notes,

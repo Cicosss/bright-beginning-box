@@ -87,7 +87,29 @@ export const useShipments = () => {
 
   useEffect(() => {
     fetchShipments();
-  }, []);
+
+    // Set up real-time listener for shipments
+    const channel = supabase
+      .channel('schema-db-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'shipments'
+        },
+        (payload) => {
+          console.log('Shipment change:', payload);
+          // Refetch data when any shipment changes
+          fetchShipments();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [fetchShipments]);
 
   return {
     shipments,
