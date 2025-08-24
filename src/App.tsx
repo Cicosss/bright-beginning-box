@@ -19,6 +19,7 @@ import CalendarView from './components/CalendarView';
 import { NotesView } from './components/NotesView';
 import { ProfileSettingsModal } from './components/ProfileSettingsModal';
 import { OnlineUsersBadge } from './components/OnlineUsersBadge';
+import { AdminPanel } from './components/AdminPanel';
 
 declare const google: any;
 
@@ -73,6 +74,11 @@ const Sidebar = ({
     { id: 'gmail', name: 'Gmail', icon: 'fa-envelope' },
     { id: 'notes', name: 'Blocco Note', icon: 'fa-note-sticky' },
   ];
+
+  // Add admin panel only for system administrator
+  if (profile?.role === 'Amministratore') {
+    menuItems.push({ id: 'admin', name: '👑 Admin', icon: 'fa-shield-alt' });
+  }
 
   return (
     <aside className="w-64 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 flex flex-col shadow-lg flex-shrink-0">
@@ -497,6 +503,8 @@ export default function App() {
         return <GmailView />;
       case 'notes':
         return <NotesView onNoteClick={setSelectedNote} />;
+      case 'admin':
+        return <AdminPanel />;
       default:
         return <div className="p-6">Vista non trovata</div>;
     }
@@ -510,6 +518,7 @@ export default function App() {
       case 'calendar': return 'Calendario';
       case 'gmail': return 'Gmail';
       case 'notes': return 'Blocco Note';
+      case 'admin': return 'Pannello Amministrativo';
       default: return 'Dashboard';
     }
   };

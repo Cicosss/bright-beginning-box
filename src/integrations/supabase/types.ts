@@ -622,6 +622,72 @@ export type Database = {
           },
         ]
       }
+      user_bans: {
+        Row: {
+          banned_at: string
+          banned_by: string
+          banned_user_id: string
+          created_at: string | null
+          expires_at: string | null
+          id: string
+          is_active: boolean
+          reason: string | null
+        }
+        Insert: {
+          banned_at?: string
+          banned_by: string
+          banned_user_id: string
+          created_at?: string | null
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean
+          reason?: string | null
+        }
+        Update: {
+          banned_at?: string
+          banned_by?: string
+          banned_user_id?: string
+          created_at?: string | null
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean
+          reason?: string | null
+        }
+        Relationships: []
+      }
+      user_mutes: {
+        Row: {
+          created_at: string | null
+          expires_at: string | null
+          id: string
+          is_active: boolean
+          muted_at: string
+          muted_by: string
+          muted_user_id: string
+          reason: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean
+          muted_at?: string
+          muted_by: string
+          muted_user_id: string
+          reason?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean
+          muted_at?: string
+          muted_by?: string
+          muted_user_id?: string
+          reason?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -672,6 +738,18 @@ export type Database = {
       }
       is_admin_or_manager: {
         Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
+      is_system_admin: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
+      is_user_banned: {
+        Args: { user_id: string }
+        Returns: boolean
+      }
+      is_user_muted: {
+        Args: { user_id: string }
         Returns: boolean
       }
     }
