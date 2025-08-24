@@ -7,6 +7,7 @@ import { Note } from '../types';
 import { NoteCardWithMentions } from './NoteCardWithMentions';
 import { NoteColumn } from './NoteColumn';
 import { AddNoteModalWithMentions } from './AddNoteModalWithMentions';
+import NoteDetailModal from './NoteDetailModal';
 import UserMentionDropdown from './UserMentionDropdown';
 import { Button } from './ui/button';
 import { Plus } from 'lucide-react';
@@ -23,10 +24,12 @@ const DEFAULT_COLUMNS = [
 ];
 
 export function NotesView({ onNoteClick }: NotesViewProps) {
-  const { notes, loading, createNote, updateNote } = useNotes();
+  const { notes, loading, createNote, updateNote, deleteNote } = useNotes();
   const { user } = useAuth();
   const [activeNote, setActiveNote] = useState<Note | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showDetailModal, setShowDetailModal] = useState(false);
+  const [selectedNote, setSelectedNote] = useState<Note | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [profiles, setProfiles] = useState<any[]>([]);
 
@@ -114,6 +117,14 @@ export function NotesView({ onNoteClick }: NotesViewProps) {
 
     return { content, mentionedUserIds };
   }, []);
+
+  const handleNoteClick = (note: Note) => {
+    setSelectedNote(note);
+    setShowDetailModal(true);
+    if (onNoteClick) {
+      onNoteClick(note);
+    }
+  };
 
   const handleAddNote = async (noteData: Omit<Note, 'id' | 'lastModified'>) => {
     try {
@@ -254,7 +265,7 @@ export function NotesView({ onNoteClick }: NotesViewProps) {
                 title={column.title}
                 color={column.color}
                 notes={notesByColumn[column.id] || []}
-                onNoteClick={onNoteClick || (() => {})}
+                onNoteClick={handleNoteClick}
                 onUpdateNote={handleUpdateNote}
                 profiles={profiles}
                 parseMentions={parseMentions}
@@ -286,6 +297,19 @@ export function NotesView({ onNoteClick }: NotesViewProps) {
           columns={DEFAULT_COLUMNS}
         />
       )}
+
+      {/* Note Detail Modal */}
+      <NoteDetailModal
+        note={selectedNote}
+        isOpen={showDetailModal}
+        onClose={() => {
+          setShowDetailModal(false);
+          setSelectedNote(null);
+        }}
+        onUpdateNote={handleUpdateNote}
+        onDeleteNote={deleteNote}
+        columns={DEFAULT_COLUMNS}
+      />
     </div>
   );
 }

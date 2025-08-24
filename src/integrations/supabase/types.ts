@@ -311,6 +311,8 @@ export type Database = {
           created_by: string | null
           id: string
           is_shared: boolean | null
+          last_modified_at: string | null
+          last_modified_by: string | null
           notebook: string | null
           title: string
           updated_at: string | null
@@ -321,6 +323,8 @@ export type Database = {
           created_by?: string | null
           id?: string
           is_shared?: boolean | null
+          last_modified_at?: string | null
+          last_modified_by?: string | null
           notebook?: string | null
           title: string
           updated_at?: string | null
@@ -331,6 +335,8 @@ export type Database = {
           created_by?: string | null
           id?: string
           is_shared?: boolean | null
+          last_modified_at?: string | null
+          last_modified_by?: string | null
           notebook?: string | null
           title?: string
           updated_at?: string | null

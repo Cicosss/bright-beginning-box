@@ -10,7 +10,10 @@ export const useNotes = () => {
     try {
       const { data, error } = await supabase
         .from('notes')
-        .select('*');
+        .select(`
+          *,
+          last_modified_profile:profiles!notes_last_modified_by_fkey(name, avatar_url)
+        `);
 
       if (error) throw error;
 
@@ -20,7 +23,10 @@ export const useNotes = () => {
         content: n.content || '',
         notebook: n.notebook || 'Generale',
         isShared: n.is_shared || false,
-        lastModified: new Date(n.updated_at)
+        lastModified: new Date(n.updated_at),
+        createdBy: n.created_by,
+        lastModifiedBy: n.last_modified_by,
+        lastModifiedAt: n.last_modified_at ? new Date(n.last_modified_at) : undefined
       }));
 
       setNotes(mappedNotes);
@@ -72,7 +78,8 @@ export const useNotes = () => {
           title: updates.title,
           content: updates.content,
           notebook: updates.notebook,
-          is_shared: updates.isShared
+          is_shared: updates.isShared,
+          last_modified_by: updates.lastModifiedBy
         })
         .eq('id', noteId);
 
@@ -86,6 +93,22 @@ export const useNotes = () => {
       );
     } catch (error) {
       console.error('Errore nell\'aggiornamento nota:', error);
+    }
+  }, []);
+
+  const deleteNote = useCallback(async (noteId: string) => {
+    try {
+      const { error } = await supabase
+        .from('notes')
+        .delete()
+        .eq('id', noteId);
+
+      if (error) throw error;
+
+      setNotes(prev => prev.filter(n => n.id !== noteId));
+    } catch (error) {
+      console.error('Errore nell\'eliminazione nota:', error);
+      throw error;
     }
   }, []);
 
@@ -119,6 +142,7 @@ export const useNotes = () => {
     loading,
     refetch: fetchNotes,
     createNote,
-    updateNote
+    updateNote,
+    deleteNote
   };
 };

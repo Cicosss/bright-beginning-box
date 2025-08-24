@@ -96,4 +96,7 @@ export interface Note {
     notebook: string;
     isShared: boolean;
     lastModified: Date;
+    createdBy?: string;
+    lastModifiedBy?: string;
+    lastModifiedAt?: Date;
 }
