@@ -126,12 +126,12 @@ export function AddNoteModalWithMentions({ isOpen, onClose, onSave, columns }: A
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="bg-card border border-border rounded-lg shadow-lg w-full max-w-md relative">
-        <div className="flex items-center justify-between p-4 border-b border-border">
+    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+      <div className="bg-black border border-gray-600 rounded-lg shadow-lg w-full max-w-md relative">
+        <div className="flex items-center justify-between p-4 border-b border-gray-600">
           <div className="flex items-center gap-2">
-            <FileText className="w-5 h-5 text-primary" />
-            <h2 className="text-lg font-semibold text-foreground">Nuova Nota</h2>
+            <FileText className="w-5 h-5 text-blue-400" />
+            <h2 className="text-lg font-semibold text-white">Nuova Nota</h2>
           </div>
           <Button
             variant="ghost"
@@ -145,7 +145,7 @@ export function AddNoteModalWithMentions({ isOpen, onClose, onSave, columns }: A
 
         <form onSubmit={handleSubmit} className="p-4 space-y-4">
           <div>
-            <label htmlFor="title" className="block text-sm font-medium text-foreground mb-2">
+            <label htmlFor="title" className="block text-sm font-medium text-white mb-2">
               Titolo *
             </label>
             <input
@@ -153,7 +153,7 @@ export function AddNoteModalWithMentions({ isOpen, onClose, onSave, columns }: A
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              className="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+              className="w-full px-3 py-2 border border-gray-600 rounded-md bg-white text-black placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               placeholder="Inserisci il titolo della nota..."
               required
               autoFocus
@@ -161,7 +161,7 @@ export function AddNoteModalWithMentions({ isOpen, onClose, onSave, columns }: A
           </div>
 
           <div className="relative">
-            <label htmlFor="content" className="block text-sm font-medium text-foreground mb-2">
+            <label htmlFor="content" className="block text-sm font-medium text-white mb-2">
               Contenuto
             </label>
             <textarea
@@ -169,7 +169,7 @@ export function AddNoteModalWithMentions({ isOpen, onClose, onSave, columns }: A
               id="content"
               value={content}
               onChange={handleContentChange}
-              className="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent resize-none"
+              className="w-full px-3 py-2 border border-gray-600 rounded-md bg-white text-black placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
               placeholder="Inserisci il contenuto della nota... (usa @ per menzionare)"
               rows={4}
             />
@@ -186,14 +186,14 @@ export function AddNoteModalWithMentions({ isOpen, onClose, onSave, columns }: A
           </div>
 
           <div>
-            <label htmlFor="notebook" className="block text-sm font-medium text-foreground mb-2">
+            <label htmlFor="notebook" className="block text-sm font-medium text-white mb-2">
               Colonna
             </label>
             <select
               id="notebook"
               value={notebook}
               onChange={(e) => setNotebook(e.target.value)}
-              className="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+              className="w-full px-3 py-2 border border-gray-600 rounded-md bg-white text-black focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             >
               {columns.map((column) => (
                 <option key={column.id} value={column.title}>
@@ -209,9 +209,9 @@ export function AddNoteModalWithMentions({ isOpen, onClose, onSave, columns }: A
               type="checkbox"
               checked={isShared}
               onChange={(e) => setIsShared(e.target.checked)}
-              className="w-4 h-4 text-primary bg-background border-border rounded focus:ring-primary focus:ring-2"
+              className="w-4 h-4 text-blue-500 bg-white border-gray-600 rounded focus:ring-blue-500 focus:ring-2"
             />
-            <label htmlFor="isShared" className="text-sm text-foreground">
+            <label htmlFor="isShared" className="text-sm text-white">
               Condividi con il team
             </label>
           </div>
