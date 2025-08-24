@@ -23,7 +23,7 @@ export const useChatMessages = () => {
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Fetch all user profiles for mentions
+  // Fetch all user profiles for mentions - optimized with no dependencies
   const fetchProfiles = useCallback(async () => {
     try {
       const { data, error } = await supabase
@@ -37,58 +37,61 @@ export const useChatMessages = () => {
     }
   }, []);
 
-  // Fetch messages with sender info and mentions
+  // Optimized query to fetch messages with batched mention queries
   const fetchMessages = useCallback(async () => {
     try {
       setLoading(true);
       
-      // Fetch messages first
-      const { data: messagesData, error: messagesError } = await supabase
-        .from('messages')
-        .select('*')
-        .order('created_at', { ascending: true });
+      // Fetch messages and senders in parallel  
+      const [messagesResponse, allProfilesResponse] = await Promise.all([
+        supabase
+          .from('messages')
+          .select('*')
+          .order('created_at', { ascending: true }),
+        supabase
+          .from('profiles')
+          .select('id, name, avatar_url')
+      ]);
 
-      if (messagesError) throw messagesError;
+      if (messagesResponse.error) throw messagesResponse.error;
+      if (allProfilesResponse.error) throw allProfilesResponse.error;
 
-      // Get unique sender IDs and fetch their profiles
-      const senderIds = [...new Set(messagesData?.map(m => m.sender_id) || [])];
-      const { data: senderProfiles } = await supabase
-        .from('profiles')
-        .select('id, name, avatar_url')
-        .in('id', senderIds);
+      const messagesData = messagesResponse.data || [];
+      const allProfiles = allProfilesResponse.data || [];
 
-      // Fetch mentions for each message and combine with profile data
-      const messagesWithMentions = await Promise.all(
-        (messagesData || []).map(async (message) => {
-          const senderProfile = senderProfiles?.find(p => p.id === message.sender_id);
-          
-          const { data: mentions } = await supabase
+      // Batch fetch all mentions for all messages in one query
+      const messageIds = messagesData.map(m => m.id);
+      const { data: allMentions } = messageIds.length > 0 
+        ? await supabase
             .from('message_mentions')
-            .select('mentioned_user_id')
-            .eq('message_id', message.id);
-          
-          const mentionedUserIds = mentions?.map(m => m.mentioned_user_id) || [];
-          let mentionNames: string[] = [];
-          
-          if (mentionedUserIds.length > 0) {
-            const { data: mentionedProfiles } = await supabase
-              .from('profiles')
-              .select('name')
-              .in('id', mentionedUserIds);
-            
-            mentionNames = mentionedProfiles?.map(p => p.name) || [];
-          }
-          
-          return {
-            ...message,
-            sender_name: senderProfile?.name || 'Unknown User',
-            sender_avatar: senderProfile?.avatar_url,
-            mentions: mentionNames
-          };
-        })
-      );
+            .select('message_id, mentioned_user_id')
+            .in('message_id', messageIds)
+        : { data: [] };
 
-      setMessages(messagesWithMentions);
+      // Group mentions by message_id for efficient lookup
+      const mentionsByMessage = (allMentions || []).reduce((acc, mention) => {
+        if (!acc[mention.message_id]) acc[mention.message_id] = [];
+        acc[mention.message_id].push(mention.mentioned_user_id);
+        return acc;
+      }, {} as Record<string, string[]>);
+
+      // Transform messages with sender and mention info
+      const transformedMessages = messagesData.map(message => {
+        const senderProfile = allProfiles.find(p => p.id === message.sender_id);
+        const mentionedUserIds = mentionsByMessage[message.id] || [];
+        const mentionNames = mentionedUserIds
+          .map(id => allProfiles.find(p => p.id === id)?.name)
+          .filter(Boolean);
+        
+        return {
+          ...message,
+          sender_name: senderProfile?.name || 'Unknown User',
+          sender_avatar: senderProfile?.avatar_url,
+          mentions: mentionNames
+        };
+      });
+
+      setMessages(transformedMessages);
     } catch (error) {
       console.error('Error fetching messages:', error);
     } finally {
@@ -96,7 +99,7 @@ export const useChatMessages = () => {
     }
   }, []);
 
-  // Send a new message
+  // Send a new message - optimized 
   const sendMessage = useCallback(async (content: string, mentionedUsers: string[] = []) => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
@@ -142,7 +145,7 @@ export const useChatMessages = () => {
     const mentionedUserIds: string[] = [];
 
     mentions.forEach(mention => {
-      const username = mention.substring(1); // Remove @
+      const username = mention.substring(1);
       const profile = profiles.find(p => 
         p.name.toLowerCase().includes(username.toLowerCase())
       );
@@ -154,11 +157,18 @@ export const useChatMessages = () => {
     return { content, mentionedUserIds };
   }, [profiles]);
 
+  // Initialize data and setup real-time listener - fixed dependency array
   useEffect(() => {
-    fetchProfiles();
-    fetchMessages();
+    let mounted = true;
+    
+    const initializeChat = async () => {
+      await fetchProfiles();
+      if (mounted) await fetchMessages();
+    };
 
-    // Set up real-time listener for messages
+    initializeChat();
+
+    // Optimized real-time listener - only refresh when needed
     const messagesChannel = supabase
       .channel('chat-messages')
       .on(
@@ -168,36 +178,34 @@ export const useChatMessages = () => {
           schema: 'public',
           table: 'messages'
         },
-        (payload) => {
-          console.log('Message change:', payload);
-          fetchMessages();
+        () => {
+          if (mounted) fetchMessages();
         }
       )
       .on(
         'postgres_changes',
         {
           event: '*',
-          schema: 'public',
+          schema: 'public', 
           table: 'message_mentions'
         },
-        (payload) => {
-          console.log('Mention change:', payload);
-          fetchMessages();
+        () => {
+          if (mounted) fetchMessages();
         }
       )
       .subscribe();
 
     return () => {
+      mounted = false;
       supabase.removeChannel(messagesChannel);
     };
-  }, [fetchMessages, fetchProfiles]);
+  }, []); // Empty dependency array - no more loops
 
   return {
     messages,
     profiles,
     loading,
     sendMessage,
-    parseMentions,
-    fetchMessages
+    parseMentions
   };
 };
