@@ -40,7 +40,7 @@ export function NotesView({ onNoteClick }: NotesViewProps) {
 
   // Group notes by notebook (using notebook as column)
   const notesByColumn = DEFAULT_COLUMNS.reduce((acc, column) => {
-    const columnNotes = notes.filter(note => 
+    const columnNotes = (notes || []).filter(note => 
       (note.notebook || 'ideas').toLowerCase().replace(/\s+/g, '-') === column.id &&
       (searchTerm === '' || 
         note.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -53,7 +53,7 @@ export function NotesView({ onNoteClick }: NotesViewProps) {
 
   const handleDragStart = (event: DragStartEvent) => {
     const { active } = event;
-    const note = notes.find(n => n.id === active.id);
+    const note = (notes || []).find(n => n.id === active.id);
     setActiveNote(note || null);
   };
 
@@ -70,7 +70,7 @@ export function NotesView({ onNoteClick }: NotesViewProps) {
     const newColumn = DEFAULT_COLUMNS.find(col => col.id === newColumnId);
     if (!newColumn) return;
 
-    const note = notes.find(n => n.id === noteId);
+    const note = (notes || []).find(n => n.id === noteId);
     if (!note) return;
 
     const currentColumnId = (note.notebook || 'ideas').toLowerCase().replace(/\s+/g, '-');

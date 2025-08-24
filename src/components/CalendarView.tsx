@@ -17,7 +17,7 @@ interface NewEvent {
   type: 'meeting' | 'pickup';
 }
 
-const CalendarView: React.FC<CalendarViewProps> = ({ onEventClick }) => {
+function CalendarView({ onEventClick }: CalendarViewProps) {
   const { events, loading, createEvent } = useCalendarEvents();
   const { user } = useAuth();
   
@@ -297,6 +297,6 @@ const CalendarView: React.FC<CalendarViewProps> = ({ onEventClick }) => {
       </div>
     </div>
   );
-};
+}
 
 export default CalendarView;
