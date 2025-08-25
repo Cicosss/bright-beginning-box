@@ -107,10 +107,45 @@ export const useTasks = () => {
     };
   }, [fetchTasks]);
 
+  const createTask = useCallback(async (taskData: {
+    title: string;
+    category?: string;
+    priority?: Priority;
+    dueDate?: string;
+    assignedTo?: string;
+    tags?: string[];
+  }) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('User not authenticated');
+
+      const { error } = await supabase
+        .from('tasks')
+        .insert({
+          title: taskData.title,
+          category: taskData.category || 'Generale',
+          priority: taskData.priority || Priority.Medium,
+          due_date: taskData.dueDate || null,
+          assigned_to: taskData.assignedTo || user.id,
+          created_by: user.id,
+          tags: taskData.tags || []
+        });
+
+      if (error) throw error;
+      
+      // Real-time will handle the update, but we can also refetch to be sure
+      await fetchTasks();
+    } catch (error) {
+      console.error('Errore nella creazione task:', error);
+      throw error;
+    }
+  }, [fetchTasks]);
+
   return {
     tasks,
     loading,
     refetch: fetchTasks,
-    updateTask
+    updateTask,
+    createTask
   };
 };

@@ -18,10 +18,11 @@ interface NewTask {
   priority: Priority;
   dueDate: string;
   assignedTo?: string;
+  tags: string[];
 }
 
 const TodoList: React.FC<TodoListProps> = ({ onTaskClick }) => {
-  const { tasks, loading, updateTask } = useTasks();
+  const { tasks, loading, updateTask, createTask } = useTasks();
   const { user } = useAuth();
   const [showNewTaskForm, setShowNewTaskForm] = useState(false);
   const [editingTask, setEditingTask] = useState<string | null>(null);
@@ -31,8 +32,10 @@ const TodoList: React.FC<TodoListProps> = ({ onTaskClick }) => {
     category: 'Generale',
     priority: Priority.Medium,
     dueDate: '',
-    assignedTo: ''
+    assignedTo: '',
+    tags: []
   });
+  const [tagInput, setTagInput] = useState('');
 
   // Priorità con colori e icone
   const getPriorityConfig = (priority: Priority) => {
@@ -64,24 +67,32 @@ const TodoList: React.FC<TodoListProps> = ({ onTaskClick }) => {
     if (!newTask.title.trim() || !user) return;
 
     try {
-      const { error } = await supabase
-        .from('tasks')
-        .insert({
-          title: newTask.title,
-          category: newTask.category,
-          priority: newTask.priority,
-          due_date: newTask.dueDate || null,
-          assigned_to: newTask.assignedTo || user.id,
-          created_by: user.id
-        });
+      await createTask({
+        title: newTask.title,
+        category: newTask.category,
+        priority: newTask.priority,
+        dueDate: newTask.dueDate || undefined,
+        assignedTo: newTask.assignedTo || user.id,
+        tags: newTask.tags
+      });
 
-      if (error) throw error;
-
-      setNewTask({ title: '', category: 'Generale', priority: Priority.Medium, dueDate: '', assignedTo: '' });
+      setNewTask({ title: '', category: 'Generale', priority: Priority.Medium, dueDate: '', assignedTo: '', tags: [] });
+      setTagInput('');
       setShowNewTaskForm(false);
     } catch (error) {
       console.error('Errore nella creazione task:', error);
     }
+  };
+
+  const addTag = () => {
+    if (tagInput.trim() && !newTask.tags.includes(tagInput.trim())) {
+      setNewTask(prev => ({ ...prev, tags: [...prev.tags, tagInput.trim()] }));
+      setTagInput('');
+    }
+  };
+
+  const removeTag = (tagToRemove: string) => {
+    setNewTask(prev => ({ ...prev, tags: prev.tags.filter(tag => tag !== tagToRemove) }));
   };
 
   const handleEditTask = async (taskId: string, title: string) => {
@@ -208,6 +219,43 @@ const TodoList: React.FC<TodoListProps> = ({ onTaskClick }) => {
                 onChange={(e) => setNewTask(prev => ({ ...prev, dueDate: e.target.value }))}
                 className="px-3 py-2 border border-border rounded-md bg-white text-black focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
               />
+            </div>
+
+            {/* Tags Section */}
+            <div className="space-y-2">
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  placeholder="Aggiungi tag..."
+                  value={tagInput}
+                  onChange={(e) => setTagInput(e.target.value)}
+                  onKeyPress={(e) => e.key === 'Enter' && addTag()}
+                  className="flex-1 px-3 py-2 border border-border rounded-md bg-white text-black placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                />
+                <Button type="button" onClick={addTag} variant="outline" size="sm">
+                  Aggiungi
+                </Button>
+              </div>
+              
+              {newTask.tags.length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  {newTask.tags.map((tag, index) => (
+                    <span
+                      key={index}
+                      className="inline-flex items-center gap-1 px-2 py-1 bg-primary/10 text-primary text-sm rounded-md"
+                    >
+                      {tag}
+                      <button
+                        type="button"
+                        onClick={() => removeTag(tag)}
+                        className="ml-1 text-primary/70 hover:text-primary"
+                      >
+                        ×
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              )}
             </div>
             
             <div className="flex gap-2 justify-end">
