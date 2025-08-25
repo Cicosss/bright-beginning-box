@@ -697,6 +697,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
+      delete_all_messages: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       delete_note_mentions: {
         Args: { note_id: string }
         Returns: undefined

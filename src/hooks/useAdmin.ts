@@ -222,13 +222,8 @@ export const useAdmin = () => {
     if (!isSystemAdmin) return false;
 
     try {
-      const { error } = await supabase
-        .from('messages')
-        .delete()
-        .gte('created_at', '1900-01-01'); // Delete all messages
-
+      const { error } = await supabase.rpc('delete_all_messages');
       if (error) throw error;
-      
       return true;
     } catch (error) {
       console.error('Error deleting all messages:', error);
