@@ -218,6 +218,24 @@ export const useAdmin = () => {
     }
   }, [isSystemAdmin, fetchBansAndMutes]);
 
+  const deleteAllMessages = useCallback(async () => {
+    if (!isSystemAdmin) return false;
+
+    try {
+      const { error } = await supabase
+        .from('messages')
+        .delete()
+        .gte('created_at', '1900-01-01'); // Delete all messages
+
+      if (error) throw error;
+      
+      return true;
+    } catch (error) {
+      console.error('Error deleting all messages:', error);
+      return false;
+    }
+  }, [isSystemAdmin]);
+
   useEffect(() => {
     if (isSystemAdmin) {
       fetchUsers();
@@ -236,6 +254,7 @@ export const useAdmin = () => {
     muteUser,
     unbanUser,
     unmuteUser,
+    deleteAllMessages,
     refetch: () => {
       fetchUsers();
       fetchBansAndMutes();

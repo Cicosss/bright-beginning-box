@@ -9,7 +9,7 @@ import { Textarea } from './ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from './ui/dialog';
 import { Label } from './ui/label';
-import { Shield, Users, Ban, Mic, MicOff, UserX, AlertTriangle } from 'lucide-react';
+import { Shield, Users, Ban, Mic, MicOff, UserX, AlertTriangle, MessageCircle, Trash2 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { it } from 'date-fns/locale';
 
@@ -120,7 +120,8 @@ export const AdminPanel: React.FC = () => {
     banUser, 
     muteUser, 
     unbanUser, 
-    unmuteUser 
+    unmuteUser,
+    deleteAllMessages
   } = useAdmin();
 
   const [actionDialog, setActionDialog] = useState<{
@@ -135,6 +136,8 @@ export const AdminPanel: React.FC = () => {
     title: '',
     description: ''
   });
+
+  const [deleteMessagesDialog, setDeleteMessagesDialog] = useState(false);
 
   if (!isSystemAdmin) {
     return (
@@ -200,6 +203,14 @@ export const AdminPanel: React.FC = () => {
     }
   };
 
+  const handleDeleteAllMessages = async () => {
+    const success = await deleteAllMessages();
+    if (success) {
+      setDeleteMessagesDialog(false);
+      // Success feedback could be added here
+    }
+  };
+
   const getRoleColor = (role: string) => {
     switch (role) {
       case 'Amministratore': return 'bg-red-500/10 text-red-500 border-red-500/20';
@@ -223,6 +234,29 @@ export const AdminPanel: React.FC = () => {
         <Shield className="h-6 w-6 text-primary" />
         <h1 className="text-2xl font-bold">Pannello Amministrativo</h1>
       </div>
+
+      {/* Widget Eliminazione Messaggi */}
+      <Card className="bg-destructive/5 border-destructive/20">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-destructive">
+            <MessageCircle className="h-5 w-5" />
+            Gestione Chat
+          </CardTitle>
+          <CardDescription>
+            Strumenti per la gestione dei messaggi della chat di lavoro
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Button 
+            variant="destructive" 
+            onClick={() => setDeleteMessagesDialog(true)}
+            className="gap-2"
+          >
+            <Trash2 className="h-4 w-4" />
+            Elimina Tutti i Messaggi
+          </Button>
+        </CardContent>
+      </Card>
 
       <Tabs defaultValue="users" className="space-y-4">
         <TabsList className="grid w-full grid-cols-3">
@@ -384,6 +418,28 @@ export const AdminPanel: React.FC = () => {
         description={actionDialog.description}
         type={actionDialog.type}
       />
+
+      {/* Dialog Eliminazione Messaggi */}
+      <Dialog open={deleteMessagesDialog} onOpenChange={setDeleteMessagesDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="text-destructive">Eliminare Tutti i Messaggi?</DialogTitle>
+            <DialogDescription>
+              Questa azione eliminerà permanentemente tutti i messaggi della chat di lavoro.
+              <br />
+              <strong>Questa operazione non può essere annullata.</strong>
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteMessagesDialog(false)}>
+              Annulla
+            </Button>
+            <Button variant="destructive" onClick={handleDeleteAllMessages}>
+              Elimina Tutto
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
