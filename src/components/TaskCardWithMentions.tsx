@@ -289,10 +289,11 @@ const TaskCardWithMentions: React.FC<TaskCardWithMentionsProps> = ({
               <Edit2 className="w-4 h-4" />
             </Button>
             <Button
+              type="button"
               size="sm"
               variant="ghost"
               onClick={() => onDeleteTask(task.id)}
-              className="text-red-600 hover:text-red-700"
+              className="text-destructive hover:text-destructive/90"
             >
               <Trash2 className="w-4 h-4" />
             </Button>

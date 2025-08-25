@@ -22,7 +22,7 @@ interface NewTask {
 }
 
 const TodoList: React.FC<TodoListProps> = ({ onTaskClick }) => {
-  const { tasks, loading, updateTask, createTask } = useTasks();
+  const { tasks, loading, updateTask, createTask, refetch } = useTasks();
   const { user } = useAuth();
   const [showNewTaskForm, setShowNewTaskForm] = useState(false);
   const [editingTask, setEditingTask] = useState<string | null>(null);
@@ -109,14 +109,12 @@ const TodoList: React.FC<TodoListProps> = ({ onTaskClick }) => {
 
   const handleDeleteTask = async (taskId: string) => {
     try {
-      const { error } = await supabase
-        .from('tasks')
-        .delete()
-        .eq('id', taskId);
-
+      const { error } = await supabase.from('tasks').delete().eq('id', taskId);
       if (error) throw error;
+      // Ensure UI updates immediately even if realtime misses the event
+      await refetch();
     } catch (error) {
-      console.error('Errore nell\'eliminazione task:', error);
+      console.error("Errore nell'eliminazione task:", error);
     }
   };
 
